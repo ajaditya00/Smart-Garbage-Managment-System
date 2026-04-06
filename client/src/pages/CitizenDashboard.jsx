@@ -16,6 +16,7 @@ const CitizenDashboard = () => {
   });
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
@@ -94,20 +95,38 @@ const CitizenDashboard = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    if (submitting) return;
+
     if (!formData.imageFile) {
       toast.error('Please upload an image');
       return;
     }
 
-    const submitData = new FormData();
-    submitData.append('title', formData.title);
-    submitData.append('description', formData.description);
-    submitData.append('category', formData.category);
-    submitData.append('location', JSON.stringify(formData.location));
-    submitData.append('image', formData.imageFile);
+    setSubmitting(true);
 
     try {
-      await api.post('/complaints', submitData);
+      // 1. Upload Image
+      const uploadData = new FormData();
+      uploadData.append('image', formData.imageFile);
+      uploadData.append('referenceId', `complaint_${Date.now()}`);
+
+      const uploadRes = await api.post('/uploads', uploadData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      const imageData = uploadRes.data.data;
+
+      // 2. Submit Complaint
+      const complaintData = {
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        location: JSON.stringify(formData.location),
+        image: imageData.url,
+        imageData: JSON.stringify(imageData)
+      };
+
+      await api.post('/complaints', complaintData);
       
       toast.success('Complaint reported successfully!');
       setShowModal(false);
@@ -123,6 +142,8 @@ const CitizenDashboard = () => {
       fetchComplaintsAndStats();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to submit complaint');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -397,9 +418,12 @@ const CitizenDashboard = () => {
                     </button>
                     <button
                       type="submit"
-                      className="flex-1 bg-primary-500 hover:bg-primary-600 text-white py-2 px-4 rounded-lg font-medium transition-colors"
+                      disabled={submitting}
+                      className={`flex-1 flex justify-center items-center py-2 px-4 rounded-lg font-medium transition-colors text-white ${
+                        submitting ? 'bg-primary-400 cursor-not-allowed' : 'bg-primary-500 hover:bg-primary-600'
+                      }`}
                     >
-                      Submit Report
+                      {submitting ? 'Submitting...' : 'Submit Report'}
                     </button>
                   </div>
                 </form>

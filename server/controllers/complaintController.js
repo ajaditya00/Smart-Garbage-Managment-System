@@ -17,8 +17,8 @@ const createComplaint = async (req, res) => {
     //   path     → Cloudinary secure_url  (the HTTPS image URL)
     //   filename → Cloudinary public_id
     //   size     → bytes
-    let imageUrl   = null;
-    let imageData  = {};
+    let imageUrl = req.body.image || null;
+    let imageData = req.body.imageData ? (typeof req.body.imageData === 'string' ? JSON.parse(req.body.imageData) : req.body.imageData) : {};
 
     if (req.file) {
       console.log('[createComplaint] req.file keys:', Object.keys(req.file));
