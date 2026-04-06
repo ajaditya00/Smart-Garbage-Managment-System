@@ -15,10 +15,10 @@ const seedData = async () => {
     // Create admin user
     const adminUser = await User.create({
       name: 'Admin User',
-      email: 'admin@swachhai.com',
+      email: 'admin@swachh.ai',
       password: 'admin123',
       role: 'admin',
-      phone: '+91-9999999999'
+      phone: '+919999999999'
     });
 
     // Create sample employee
@@ -27,7 +27,7 @@ const seedData = async () => {
       email: 'employee@swachhai.com',
       password: 'employee123',
       role: 'employee',
-      phone: '+91-8888888888'
+      phone: '+918888888888'
     });
 
     // Create sample NGO
@@ -36,7 +36,7 @@ const seedData = async () => {
       email: 'ngo@swachhai.com',
       password: 'ngo123',
       role: 'ngo',
-      phone: '+91-7777777777'
+      phone: '+917777777777'
     });
 
     // Create sample citizen
@@ -45,7 +45,7 @@ const seedData = async () => {
       email: 'citizen@swachhai.com',
       password: 'citizen123',
       role: 'citizen',
-      phone: '+91-6666666666'
+      phone: '+916666666666'
     });
 
     console.log('Data seeded successfully!');
@@ -61,4 +61,6 @@ const seedData = async () => {
   }
 };
 
-seedData();
+if (import.meta.url === `file://${process.argv[1]}`) {
+  seedData();
+}

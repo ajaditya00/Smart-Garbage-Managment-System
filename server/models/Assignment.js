@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const assignmentSchema = new mongoose.Schema({
   complaintId: {
@@ -32,4 +32,4 @@ const assignmentSchema = new mongoose.Schema({
   timestamps: true
 });
 
-module.exports = mongoose.model('Assignment', assignmentSchema);
+export default mongoose.model('Assignment', assignmentSchema);

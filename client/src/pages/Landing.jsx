@@ -100,7 +100,7 @@ const Landing = () => {
                   <ArrowRight size={20} />
                 </Link>
                 <Link
-                  to="/login"
+                  to="/register"
                   className="border border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-primary-600 transition-colors"
                 >
                   Sign In

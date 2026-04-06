@@ -2,6 +2,13 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
+// Configure axios with backend URL
+const axiosInstance = axios.create({
+  baseURL: import.meta.env.VITE_API_URL 
+    ? `${import.meta.env.VITE_API_URL}/api` 
+    : '/api',
+});
+
 const AuthContext = createContext();
 
 export const useAuth = () => {
@@ -20,9 +27,9 @@ export const AuthProvider = ({ children }) => {
   // Set axios default header
   useEffect(() => {
     if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     } else {
-      delete axios.defaults.headers.common['Authorization'];
+      delete axiosInstance.defaults.headers.common['Authorization'];
     }
   }, [token]);
 
@@ -31,7 +38,7 @@ export const AuthProvider = ({ children }) => {
     const loadUser = async () => {
       if (token) {
         try {
-          const response = await axios.get('/api/auth/me');
+          const response = await axiosInstance.get('/auth/me');
           setUser(response.data);
         } catch (error) {
           console.error('Failed to load user:', error);
@@ -46,13 +53,13 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post('/api/auth/login', { email, password });
+      const response = await axiosInstance.post('/auth/login', { email, password });
       const { token: newToken, ...userData } = response.data;
-      
+
       localStorage.setItem('token', newToken);
       setToken(newToken);
       setUser(userData);
-      
+
       toast.success('Login successful!');
       return { success: true };
     } catch (error) {
@@ -64,13 +71,13 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (userData) => {
     try {
-      const response = await axios.post('/api/auth/register', userData);
+      const response = await axiosInstance.post('/auth/register', userData);
       const { token: newToken, ...user } = response.data;
-      
+
       localStorage.setItem('token', newToken);
       setToken(newToken);
       setUser(user);
-      
+
       toast.success('Registration successful!');
       return { success: true };
     } catch (error) {
@@ -84,7 +91,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
     setToken(null);
     setUser(null);
-    delete axios.defaults.headers.common['Authorization'];
+    delete axiosInstance.defaults.headers.common['Authorization'];
     toast.success('Logged out successfully');
   };
 

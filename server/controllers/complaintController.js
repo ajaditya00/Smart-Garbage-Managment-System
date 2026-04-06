@@ -1,6 +1,6 @@
-const { validationResult } = require('express-validator');
-const Complaint = require('../models/Complaint');
-const Assignment = require('../models/Assignment');
+import { validationResult } from 'express-validator';
+import Complaint from '../models/Complaint.js';
+import Assignment from '../models/Assignment.js';
 
 // @desc    Create new complaint
 // @route   POST /api/complaints
@@ -12,17 +12,41 @@ const createComplaint = async (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    if (!req.file) {
-      return res.status(400).json({ message: 'Image is required' });
+    // Image is optional
+    const imageUrl = req.file ? (req.file.path || req.file.secure_url) : null;
+
+    const { title, location, category, description } = req.body;
+
+    // Parse location - it may come as JSON string from FormData
+    let locationData;
+    try {
+      if (typeof location === 'string') {
+        locationData = JSON.parse(location);
+      } else {
+        locationData = location;
+      }
+    } catch (e) {
+      console.error('Location parsing error:', e);
+      return res.status(400).json({ 
+        message: 'Invalid location format. Must be a valid JSON object or string.' 
+      });
     }
 
-    const { location, category, description } = req.body;
-    const locationData = JSON.parse(location);
+    if (!locationData || !locationData.address) {
+      return res.status(400).json({ message: 'Location address is required' });
+    }
+
+    const { latitude, longitude, address } = locationData;
 
     const complaint = await Complaint.create({
       userId: req.user._id,
-      image: req.file.path,
-      location: locationData,
+      title,
+      image: imageUrl,
+      location: {
+        latitude: latitude && !isNaN(parseFloat(latitude)) ? parseFloat(latitude) : null,
+        longitude: longitude && !isNaN(parseFloat(longitude)) ? parseFloat(longitude) : null,
+        address
+      },
       category,
       description
     });
@@ -31,11 +55,26 @@ const createComplaint = async (req, res) => {
 
     res.status(201).json(complaint);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('createComplaint error details:', {
+      message: error.message,
+      stack: error.stack,
+      body: req.body,
+      file: req.file ? {
+        originalname: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.size
+      } : 'No file'
+    });
+    
+    res.status(500).json({ 
+      message: 'Failed to create complaint', 
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 };
 
-// @desc    Get complaints
+// @desc    Get complaints (role-filtered)
 // @route   GET /api/complaints
 // @access  Private
 const getComplaints = async (req, res) => {
@@ -82,11 +121,6 @@ const getComplaint = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized' });
     }
 
-    if ((req.user.role === 'employee' || req.user.role === 'ngo') && 
-        complaint.assignedTo && complaint.assignedTo._id.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Not authorized' });
-    }
-
     res.json(complaint);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -99,34 +133,29 @@ const getComplaint = async (req, res) => {
 const updateComplaintStatus = async (req, res) => {
   try {
     const { status } = req.body;
-    
+
     const complaint = await Complaint.findById(req.params.id);
 
     if (!complaint) {
       return res.status(404).json({ message: 'Complaint not found' });
     }
 
-    // Check if user is assigned to this complaint
-    if (!complaint.assignedTo || complaint.assignedTo.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Not authorized' });
-    }
-
     complaint.status = status;
     complaint.updatedAt = Date.now();
 
     if (status === 'completed' && req.file) {
-      // Update assignment with proof image
+      // Cloudinary URL for proof image
+      const proofUrl = req.file.path || req.file.secure_url;
       await Assignment.findOneAndUpdate(
         { complaintId: complaint._id, assigneeId: req.user._id },
-        { 
-          proofImage: req.file.path,
+        {
+          proofImage: proofUrl,
           completedAt: new Date()
         }
       );
     }
 
     await complaint.save();
-
     await complaint.populate('userId', 'name email');
     await complaint.populate('assignedTo', 'name role');
 
@@ -136,7 +165,7 @@ const updateComplaintStatus = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
   createComplaint,
   getComplaints,
   getComplaint,

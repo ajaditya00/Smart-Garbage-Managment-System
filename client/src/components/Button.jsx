@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 import { motion } from 'framer-motion';
 import { buttonVariants } from '../utils/animations';
 import LoadingSpinner from './LoadingSpinner';
+import { Link } from 'react-router-dom';
 
-const Button = ({
+const MotionLink = motion(Link);
+
+const Button = forwardRef(({
   children,
   onClick,
   type = 'button',
@@ -13,8 +16,10 @@ const Button = ({
   disabled = false,
   icon = null,
   className = '',
+  as,
+  to,
   ...props
-}) => {
+}, ref) => {
   const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2';
 
   const variants = {
@@ -33,14 +38,18 @@ const Button = ({
   };
 
   const isDisabled = disabled || loading;
+  const isLink = !!to;
+  const Component = isLink ? MotionLink : motion.button;
 
   return (
-    <motion.button
-      type={type}
+    <Component
+      ref={ref}
+      to={to}
+      type={!isLink ? type : undefined}
       onClick={onClick}
-      disabled={isDisabled}
+      disabled={!isLink ? isDisabled : undefined}
       className={`${baseClasses} ${variants[variant]} ${sizes[size]} ${
-        isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+        isDisabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'cursor-pointer'
       } ${className}`}
       variants={!isDisabled ? buttonVariants : {}}
       initial="idle"
@@ -56,8 +65,8 @@ const Button = ({
           {children}
         </>
       )}
-    </motion.button>
+    </Component>
   );
-};
+});
 
 export default Button;

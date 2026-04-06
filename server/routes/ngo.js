@@ -1,10 +1,10 @@
-const express = require('express');
-const { getTasks, acceptTask } = require('../controllers/ngoController');
-const { protect, authorize } = require('../middleware/auth');
+import express from 'express';
+import { getTasks, acceptTask } from '../controllers/ngoController.js';
+import { protect, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
 
 router.get('/tasks', protect, authorize('ngo'), getTasks);
 router.put('/accept/:complaintId', protect, authorize('ngo'), acceptTask);
 
-module.exports = router;
+export default router;

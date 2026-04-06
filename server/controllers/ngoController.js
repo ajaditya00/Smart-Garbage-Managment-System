@@ -1,5 +1,5 @@
-const Complaint = require('../models/Complaint');
-const Assignment = require('../models/Assignment');
+import Complaint from '../models/Complaint.js';
+import Assignment from '../models/Assignment.js';
 
 // @desc    Get available and assigned tasks for NGO
 // @route   GET /api/ngo/tasks
@@ -69,7 +69,7 @@ const acceptTask = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
   getTasks,
   acceptTask
 };

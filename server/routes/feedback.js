@@ -1,7 +1,7 @@
-const express = require('express');
-const { body } = require('express-validator');
-const { createFeedback, getFeedback } = require('../controllers/feedbackController');
-const { protect, authorize } = require('../middleware/auth');
+import express from 'express';
+import { body } from 'express-validator';
+import { createFeedback, getFeedback } from '../controllers/feedbackController.js';
+import { protect, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -15,4 +15,4 @@ const feedbackValidation = [
 router.post('/', protect, authorize('citizen'), feedbackValidation, createFeedback);
 router.get('/:complaintId', protect, getFeedback);
 
-module.exports = router;
+export default router;

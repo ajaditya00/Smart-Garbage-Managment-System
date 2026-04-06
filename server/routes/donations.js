@@ -1,13 +1,12 @@
-const express = require('express');
-const { body } = require('express-validator');
-const { createOrder, verifyPayment } = require('../controllers/donationController');
-const { protect } = require('../middleware/auth');
+import express from 'express';
+import { body } from 'express-validator';
+import { createOrder, verifyPayment, getDonationHistory, getDonationStats } from '../controllers/donationController.js';
+import { protect } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Validation middleware
 const orderValidation = [
-  body('amount').isNumeric().isFloat({ min: 1 }).withMessage('Amount must be a positive number')
+  body('amount').isNumeric().withMessage('Amount must be a number')
 ];
 
 const verifyValidation = [
@@ -18,5 +17,7 @@ const verifyValidation = [
 
 router.post('/create-order', protect, orderValidation, createOrder);
 router.post('/verify', protect, verifyValidation, verifyPayment);
+router.get('/history', protect, getDonationHistory);
+router.get('/stats', protect, getDonationStats);
 
-module.exports = router;
+export default router;

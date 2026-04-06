@@ -1,7 +1,7 @@
-const User = require('../models/User');
-const Complaint = require('../models/Complaint');
-const Assignment = require('../models/Assignment');
-const Feedback = require('../models/Feedback');
+import User from '../models/User.js';
+import Complaint from '../models/Complaint.js';
+import Assignment from '../models/Assignment.js';
+import Feedback from '../models/Feedback.js';
 
 // @desc    Assign complaint to employee or NGO
 // @route   POST /api/admin/assign
@@ -163,7 +163,7 @@ const getDashboardStats = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
   assignComplaint,
   getUsersByRole,
   getDashboardStats

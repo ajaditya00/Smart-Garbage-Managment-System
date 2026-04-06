@@ -1,37 +1,47 @@
-const multer = require('multer');
-const path = require('path');
+import multer from 'multer';
+import path from 'path';
+import { v2 as cloudinary } from 'cloudinary';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
 
-// Configure storage
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/');
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+// Cloudinary storage engine
+const cloudinaryStorage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: 'swachh-ai',
+    allowed_formats: ['jpeg', 'jpg', 'png', 'gif'],
+    transformation: [{ width: 1280, height: 960, crop: 'limit', quality: 'auto' }]
   }
 });
 
 // File filter
 const fileFilter = (req, file, cb) => {
-  const allowedFileTypes = /jpeg|jpg|png|gif/;
-  const extname = allowedFileTypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = allowedFileTypes.test(file.mimetype);
+  const allowedExtensions = ['.jpeg', '.jpg', '.png', '.gif'];
+  const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+  
+  const ext = path.extname(file.originalname).toLowerCase();
+  const mime = file.mimetype.toLowerCase();
 
-  if (mimetype && extname) {
+  if (allowedExtensions.includes(ext) && allowedMimeTypes.includes(mime)) {
     return cb(null, true);
   } else {
-    cb(new Error('Error: Images only (jpeg, jpg, png, gif)'));
+    console.error(`File rejected: ${file.originalname} (${file.mimetype})`);
+    cb(new Error(`Error: Invalid file type. Only ${allowedExtensions.join(', ')} images are allowed.`));
   }
 };
 
-// Configure multer
+// Configure multer with Cloudinary storage
 const upload = multer({
-  storage: storage,
-  limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB limit
-  },
-  fileFilter: fileFilter
+  storage: cloudinaryStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter
 });
 
-module.exports = upload;
+export { upload };
+export default upload;

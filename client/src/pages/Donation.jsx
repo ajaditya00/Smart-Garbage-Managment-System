@@ -39,8 +39,8 @@ const Donation = () => {
   const fetchDonations = async () => {
     try {
       const [donationsRes, statsRes] = await Promise.all([
-        api.get('/donations/history'),
-        api.get('/donations/stats')
+        api.get('/donate/history'),
+        api.get('/donate/stats')
       ]);
 
       setDonations(donationsRes.data);
@@ -54,7 +54,7 @@ const Donation = () => {
 
   const createOrder = async (amount) => {
     try {
-      const response = await api.post('/donations/create-order', {
+      const response = await api.post('/donate/create-order', {
         amount: amount * 100 // Convert to paisa
       });
       return response.data;
@@ -91,7 +91,7 @@ const Donation = () => {
         handler: async (response) => {
           try {
             // Verify payment
-            await api.post('/donations/verify-payment', {
+            await api.post('/donate/verify', {
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_order_id: response.razorpay_order_id,
               razorpay_signature: response.razorpay_signature

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Button from '../components/Button';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -107,20 +108,14 @@ const Login = () => {
           </div>
 
           <div>
-            <button
+            <Button
               type="submit"
-              disabled={loading}
-              className="btn-primary w-full flex items-center justify-center space-x-2 disabled:opacity-50"
+              loading={loading}
+              className="w-full"
+              icon={<LogIn size={20} />}
             >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <>
-                  <LogIn size={20} />
-                  <span>Sign In</span>
-                </>
-              )}
-            </button>
+              Sign In
+            </Button>
           </div>
 
           <div className="text-center">

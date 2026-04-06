@@ -48,23 +48,21 @@ const CitizenDashboard = () => {
   };
 
   useEffect(() => {
-    fetchStats();
-    fetchComplaints();
+    fetchComplaintsAndStats();
   }, []);
 
-  const fetchStats = async () => {
+  const fetchComplaintsAndStats = async () => {
     try {
-      const response = await api.get('/citizen/stats');
-      setStats(response.data);
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-    }
-  };
-
-  const fetchComplaints = async () => {
-    try {
-      const response = await api.get('/citizen/complaints');
-      setComplaints(response.data);
+      setLoading(true);
+      const response = await api.get('/complaints');
+      const data = response.data;
+      setComplaints(data);
+      
+      setStats({
+        total: data.length,
+        pending: data.filter(c => c.status === 'pending').length,
+        resolved: data.filter(c => c.status === 'completed' || c.status === 'verified').length
+      });
     } catch (error) {
       console.error('Error fetching complaints:', error);
     } finally {
@@ -109,9 +107,7 @@ const CitizenDashboard = () => {
     submitData.append('image', formData.imageFile);
 
     try {
-      await api.post('/complaints', submitData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      await api.post('/complaints', submitData);
       
       toast.success('Complaint reported successfully!');
       setShowModal(false);
@@ -124,8 +120,7 @@ const CitizenDashboard = () => {
         imageFile: null
       });
       
-      fetchStats();
-      fetchComplaints();
+      fetchComplaintsAndStats();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to submit complaint');
     }
