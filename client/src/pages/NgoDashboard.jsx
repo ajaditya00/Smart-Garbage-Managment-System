@@ -48,15 +48,16 @@ const NgoDashboard = () => {
 
   const fetchData = async () => {
     try {
-      const [availableRes, myTasksRes, statsRes] = await Promise.all([
-        api.get('/ngo/available-tasks'),
-        api.get('/ngo/my-tasks'),
-        api.get('/ngo/stats')
-      ]);
+      const response = await api.get('/ngo/tasks');
+      const { availableTasks, assignedTasks } = response.data;
 
-      setAvailableTasks(availableRes.data);
-      setMyTasks(myTasksRes.data);
-      setStats(statsRes.data);
+      setAvailableTasks(availableTasks);
+      setMyTasks(assignedTasks);
+      setStats({
+        available: availableTasks.length,
+        myTasks: assignedTasks.length,
+        completed: assignedTasks.filter(t => t.status === 'completed' || t.status === 'verified').length
+      });
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Failed to load tasks');
@@ -69,7 +70,7 @@ const NgoDashboard = () => {
     setUpdating(true);
     
     try {
-      await api.post(`/ngo/volunteer/${selectedTask._id}`);
+      await api.put(`/ngo/accept/${selectedTask._id}`);
       
       toast.success('Successfully volunteered for this task!');
       setSelectedTask(null);
@@ -99,12 +100,10 @@ const NgoDashboard = () => {
       const formData = new FormData();
       formData.append('status', newStatus);
       if (proofImageFile) {
-        formData.append('completionProof', proofImageFile);
+        formData.append('proofImage', proofImageFile);
       }
 
-      await api.put(`/ngo/tasks/${selectedTask._id}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      await api.put(`/complaints/${selectedTask._id}/status`, formData);
 
       toast.success('Task updated successfully!');
       setSelectedTask(null);

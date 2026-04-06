@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const complaintSchema = new mongoose.Schema({
   userId: {
@@ -6,18 +6,23 @@ const complaintSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  title: {
+    type: String,
+    required: [true, 'Title is required'],
+    maxlength: [200, 'Title cannot exceed 200 characters']
+  },
   image: {
     type: String,
-    required: [true, 'Image is required']
+    default: null
   },
   location: {
-    lat: {
+    latitude: {
       type: Number,
-      required: [true, 'Latitude is required']
+      default: null
     },
-    lng: {
+    longitude: {
       type: Number,
-      required: [true, 'Longitude is required']
+      default: null
     },
     address: {
       type: String,
@@ -26,7 +31,7 @@ const complaintSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['household', 'industrial', 'public', 'other'],
+    enum: ['garbage', 'sewage', 'road', 'electricity', 'water', 'household', 'industrial', 'public', 'other'],
     required: [true, 'Category is required']
   },
   description: {
@@ -36,7 +41,7 @@ const complaintSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'assigned', 'in-progress', 'completed'],
+    enum: ['pending', 'assigned', 'in-progress', 'completed', 'verified'],
     default: 'pending'
   },
   assignedTo: {
@@ -46,19 +51,11 @@ const complaintSchema = new mongoose.Schema({
   },
   assignedType: {
     type: String,
-    enum: ['employee', 'ngo'],
+    enum: ['employee', 'ngo', null],
     default: null
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
   }
 }, {
   timestamps: true
 });
 
-module.exports = mongoose.model('Complaint', complaintSchema);
+export default mongoose.model('Complaint', complaintSchema);

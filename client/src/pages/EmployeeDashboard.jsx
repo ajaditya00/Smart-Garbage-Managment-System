@@ -40,13 +40,16 @@ const EmployeeDashboard = () => {
 
   const fetchData = async () => {
     try {
-      const [tasksRes, statsRes] = await Promise.all([
-        api.get('/employee/tasks'),
-        api.get('/employee/stats')
-      ]);
+      const response = await api.get('/complaints');
+      const myTasks = response.data.filter(t => t.status !== 'pending');
 
-      setTasks(tasksRes.data);
-      setStats(statsRes.data);
+      setTasks(myTasks);
+      setStats({
+        total: myTasks.length,
+        assigned: myTasks.filter(t => t.status === 'assigned').length,
+        inProgress: myTasks.filter(t => t.status === 'in-progress').length,
+        completed: myTasks.filter(t => t.status === 'completed' || t.status === 'verified').length
+      });
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Failed to load tasks');
@@ -72,12 +75,10 @@ const EmployeeDashboard = () => {
       const formData = new FormData();
       formData.append('status', newStatus);
       if (proofImageFile) {
-        formData.append('completionProof', proofImageFile);
+        formData.append('proofImage', proofImageFile);
       }
 
-      await api.put(`/employee/tasks/${selectedTask._id}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      await api.put(`/complaints/${selectedTask._id}/status`, formData);
 
       toast.success('Task updated successfully!');
       setSelectedTask(null);

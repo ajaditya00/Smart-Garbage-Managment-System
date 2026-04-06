@@ -1,6 +1,6 @@
-const { validationResult } = require('express-validator');
-const Feedback = require('../models/Feedback');
-const Complaint = require('../models/Complaint');
+import { validationResult } from 'express-validator';
+import Feedback from '../models/Feedback.js';
+import Complaint from '../models/Complaint.js';
 
 // @desc    Create feedback
 // @route   POST /api/feedback
@@ -69,7 +69,7 @@ const getFeedback = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
   createFeedback,
   getFeedback
 };

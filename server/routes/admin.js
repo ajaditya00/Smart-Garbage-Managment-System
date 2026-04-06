@@ -1,11 +1,7 @@
-const express = require('express');
-const { body } = require('express-validator');
-const {
-  assignComplaint,
-  getUsersByRole,
-  getDashboardStats
-} = require('../controllers/adminController');
-const { protect, authorize } = require('../middleware/auth');
+import express from 'express';
+import { body } from 'express-validator';
+import { assignComplaint, getUsersByRole, getDashboardStats } from '../controllers/adminController.js';
+import { protect, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -20,4 +16,4 @@ router.post('/assign', protect, authorize('admin'), assignValidation, assignComp
 router.get('/users', protect, authorize('admin'), getUsersByRole);
 router.get('/stats', protect, authorize('admin'), getDashboardStats);
 
-module.exports = router;
+export default router;

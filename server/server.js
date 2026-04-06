@@ -1,17 +1,25 @@
-const express = require('express');
-const cors = require('cors');
-const path = require('path');
-require('dotenv').config();
+import express from 'express';
+import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
 
-const connectDB = require('./config/database');
+dotenv.config();
+
+import connectDB from './config/database.js';
+
+// Create __dirname for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Route imports
-const authRoutes = require('./routes/auth');
-const complaintRoutes = require('./routes/complaints');
-const adminRoutes = require('./routes/admin');
-const ngoRoutes = require('./routes/ngo');
-const feedbackRoutes = require('./routes/feedback');
-const donationRoutes = require('./routes/donations');
+import authRoutes from './routes/auth.js';
+import complaintRoutes from './routes/complaints.js';
+import adminRoutes from './routes/admin.js';
+import assignmentRoutes from './routes/assignments.js';
+import ngoRoutes from './routes/ngo.js';
+import feedbackRoutes from './routes/feedback.js';
+import donationRoutes from './routes/donations.js';
 
 // Connect to database
 connectDB();
@@ -35,6 +43,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/auth', authRoutes);
 app.use('/api/complaints', complaintRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/assignments', assignmentRoutes);
 app.use('/api/ngo', ngoRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/donate', donationRoutes);
@@ -62,16 +71,17 @@ app.use((err, req, res, next) => {
     return res.status(400).json({ message: `${field} already exists` });
   }
   
-  res.status(500).json({ message: 'Server Error' });
+  res.status(500).json({ 
+    message: process.env.NODE_ENV === 'production' ? 'Server Error' : err.message,
+    stack: process.env.NODE_ENV === 'production' ? null : err.stack
+  });
 });
 
 // 404 handler
 app.use('*', (req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
-
 const PORT = process.env.PORT || 5000;
-
 app.listen(PORT, () => {
-  console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });

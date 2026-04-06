@@ -57,9 +57,9 @@ const AdminDashboard = () => {
     try {
       const [statsRes, complaintsRes, employeesRes, ngosRes] = await Promise.all([
         api.get('/admin/stats'),
-        api.get('/admin/complaints'),
-        api.get('/admin/employees'),
-        api.get('/admin/ngos')
+        api.get('/complaints'),
+        api.get('/admin/users?role=employee'),
+        api.get('/admin/users?role=ngo')
       ]);
 
       setStats(statsRes.data);
@@ -82,8 +82,9 @@ const AdminDashboard = () => {
     }
 
     try {
-      await api.post(`/admin/complaints/${selectedComplaint._id}/assign`, {
-        assignedTo: assignTo,
+      await api.post(`/admin/assign`, {
+        complaintId: selectedComplaint._id,
+        assigneeId: assignTo,
         assigneeType: assignType
       });
 
