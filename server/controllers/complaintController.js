@@ -12,23 +12,38 @@ const createComplaint = async (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    // Image is optional
-    const imageUrl = req.file ? (req.file.path || req.file.secure_url) : null;
+    // ─── Image handling ────────────────────────────────────────────────────────
+    // multer-storage-cloudinary v4 sets these fields on req.file:
+    //   path     → Cloudinary secure_url  (the HTTPS image URL)
+    //   filename → Cloudinary public_id
+    //   size     → bytes
+    let imageUrl = req.body.image || null;
+    let imageData = req.body.imageData ? (typeof req.body.imageData === 'string' ? JSON.parse(req.body.imageData) : req.body.imageData) : {};
+
+    if (req.file) {
+      console.log('[createComplaint] req.file keys:', Object.keys(req.file));
+      console.log('[createComplaint] req.file.path:', req.file.path);
+
+      imageUrl = req.file.path || null;  // path = secure_url from Cloudinary
+
+      imageData = {
+        publicId : req.file.filename || null,   // filename = public_id
+        url      : imageUrl,
+        bytes    : req.file.size    || null
+      };
+    }
+    // ───────────────────────────────────────────────────────────────────────────
 
     const { title, location, category, description } = req.body;
 
-    // Parse location - it may come as JSON string from FormData
+    // Parse location — it may arrive as a JSON string from FormData
     let locationData;
     try {
-      if (typeof location === 'string') {
-        locationData = JSON.parse(location);
-      } else {
-        locationData = location;
-      }
+      locationData = typeof location === 'string' ? JSON.parse(location) : location;
     } catch (e) {
       console.error('Location parsing error:', e);
-      return res.status(400).json({ 
-        message: 'Invalid location format. Must be a valid JSON object or string.' 
+      return res.status(400).json({
+        message: 'Invalid location format. Must be a valid JSON string.'
       });
     }
 
@@ -38,12 +53,14 @@ const createComplaint = async (req, res) => {
 
     const { latitude, longitude, address } = locationData;
 
+    // ─── Persist complaint (image upload is independent) ──────────────────────
     const complaint = await Complaint.create({
       userId: req.user._id,
       title,
-      image: imageUrl,
+      image: imageUrl,      // plain URL for quick display
+      imageData,            // full Cloudinary metadata
       location: {
-        latitude: latitude && !isNaN(parseFloat(latitude)) ? parseFloat(latitude) : null,
+        latitude : latitude  && !isNaN(parseFloat(latitude))  ? parseFloat(latitude)  : null,
         longitude: longitude && !isNaN(parseFloat(longitude)) ? parseFloat(longitude) : null,
         address
       },
@@ -53,23 +70,16 @@ const createComplaint = async (req, res) => {
 
     await complaint.populate('userId', 'name email');
 
+    console.log('[createComplaint] Saved complaint image URL:', complaint.image);
+
     res.status(201).json(complaint);
   } catch (error) {
-    console.error('createComplaint error details:', {
-      message: error.message,
-      stack: error.stack,
-      body: req.body,
-      file: req.file ? {
-        originalname: req.file.originalname,
-        mimetype: req.file.mimetype,
-        size: req.file.size
-      } : 'No file'
-    });
-    
-    res.status(500).json({ 
-      message: 'Failed to create complaint', 
-      error: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    console.error('[createComplaint] Error:', error.message);
+    console.error('[createComplaint] req.file:', req.file);
+    res.status(500).json({
+      message: 'Failed to create complaint',
+      error  : error.message,
+      stack  : process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 };

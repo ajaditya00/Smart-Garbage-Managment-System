@@ -76,4 +76,11 @@ export const donationAPI = {
   verifyPayment: (data) => API.post('/donate/verify', data),
 };
 
+// Upload APIs
+export const uploadAPI = {
+  uploadImage: (formData) => API.post('/uploads', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+};
+
 export default API;

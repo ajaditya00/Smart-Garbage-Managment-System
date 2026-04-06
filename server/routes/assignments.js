@@ -5,7 +5,7 @@ import {
   updateAssignment
 } from '../controllers/assignmentController.js';
 import { protect, restrictTo } from '../middleware/auth.js';
-import { upload } from '../middleware/upload.js';
+import { complaintUpload } from '../middleware/upload.js';
 
 const router = express.Router();
 
@@ -15,6 +15,6 @@ router.route('/')
   .get(getAssignments)
   .post(restrictTo('admin'), createAssignment);
 
-router.put('/:id', upload.single('proofImage'), updateAssignment);
+router.put('/:id', complaintUpload.single('proofImage'), updateAssignment);
 
 export default router;

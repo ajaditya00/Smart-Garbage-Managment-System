@@ -3,45 +3,70 @@ import path from 'path';
 import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-});
+// ─── Lazy Cloudinary configuration ───────────────────────────────────────────
+// Configure INSIDE the params function (called at request time, not import time)
+// so that process.env is populated after dotenv.config() has run in server.js.
+// ─────────────────────────────────────────────────────────────────────────────
+function getCloudinaryInstance() {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key   : process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+  });
+  return cloudinary;
+}
 
-// Cloudinary storage engine
-const cloudinaryStorage = new CloudinaryStorage({
-  cloudinary,
-  params: {
-    folder: 'swachh-ai',
-    allowed_formats: ['jpeg', 'jpg', 'png', 'gif'],
-    transformation: [{ width: 1280, height: 960, crop: 'limit', quality: 'auto' }]
+// Storage for complaint images (folder: swachh-ai/complaints)
+const complaintStorage = new CloudinaryStorage({
+  cloudinary: getCloudinaryInstance(),
+  params: (req, file) => {
+    // Re-configure at request time to guarantee env vars are loaded
+    getCloudinaryInstance();
+    return {
+      folder        : 'swachh-ai/complaints',
+      allowed_formats: ['jpeg', 'jpg', 'png', 'gif', 'webp'],
+      transformation: [{ width: 1280, height: 960, crop: 'limit', quality: 'auto' }],
+      public_id     : `complaint_${Date.now()}_${Math.round(Math.random() * 1e9)}`
+    };
   }
 });
 
-// File filter
-const fileFilter = (req, file, cb) => {
-  const allowedExtensions = ['.jpeg', '.jpg', '.png', '.gif'];
-  const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
-  
-  const ext = path.extname(file.originalname).toLowerCase();
-  const mime = file.mimetype.toLowerCase();
+// Storage for standalone /api/uploads
+const uploadStorage = new CloudinaryStorage({
+  cloudinary: getCloudinaryInstance(),
+  params: (req, file) => {
+    getCloudinaryInstance();
+    return {
+      folder        : 'swachh-ai/uploads',
+      allowed_formats: ['jpeg', 'jpg', 'png', 'gif', 'webp'],
+      transformation: [{ width: 1280, height: 960, crop: 'limit', quality: 'auto' }],
+      public_id     : `${req.body.referenceId || 'upload'}_${Date.now()}`
+    };
+  }
+});
 
-  if (allowedExtensions.includes(ext) && allowedMimeTypes.includes(mime)) {
+// ─── File filter: validate by MIME type (more reliable for browser uploads) ──
+const imageFileFilter = (req, file, cb) => {
+  const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+  if (allowedMimeTypes.includes(file.mimetype.toLowerCase())) {
     return cb(null, true);
-  } else {
-    console.error(`File rejected: ${file.originalname} (${file.mimetype})`);
-    cb(new Error(`Error: Invalid file type. Only ${allowedExtensions.join(', ')} images are allowed.`));
   }
+  console.error(`[upload] File rejected: ${file.originalname} (${file.mimetype})`);
+  cb(new Error(`Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.`));
 };
 
-// Configure multer with Cloudinary storage
-const upload = multer({
-  storage: cloudinaryStorage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
-  fileFilter
+// ─── Multer instances ─────────────────────────────────────────────────────────
+const complaintUpload = multer({
+  storage  : complaintStorage,
+  limits   : { fileSize: 5 * 1024 * 1024 },  // 5 MB
+  fileFilter: imageFileFilter
 });
 
-export { upload };
-export default upload;
+const standaloneUpload = multer({
+  storage  : uploadStorage,
+  limits   : { fileSize: 10 * 1024 * 1024 }, // 10 MB
+  fileFilter: imageFileFilter
+});
+
+export { complaintUpload, standaloneUpload };
+export default complaintUpload;

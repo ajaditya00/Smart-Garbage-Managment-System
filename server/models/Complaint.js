@@ -11,9 +11,19 @@ const complaintSchema = new mongoose.Schema({
     required: [true, 'Title is required'],
     maxlength: [200, 'Title cannot exceed 200 characters']
   },
+  // Stores the Cloudinary secure URL of the uploaded image
   image: {
     type: String,
     default: null
+  },
+  // Stores additional Cloudinary metadata for easy retrieval
+  imageData: {
+    publicId:   { type: String, default: null }, // Cloudinary public_id
+    url:        { type: String, default: null }, // Cloudinary secure_url (same as image field)
+    format:     { type: String, default: null }, // e.g. "jpg"
+    width:      { type: Number, default: null },
+    height:     { type: Number, default: null },
+    bytes:      { type: Number, default: null }  // file size in bytes
   },
   location: {
     latitude: {

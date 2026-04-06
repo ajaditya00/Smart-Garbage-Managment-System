@@ -20,6 +20,7 @@ import assignmentRoutes from './routes/assignments.js';
 import ngoRoutes from './routes/ngo.js';
 import feedbackRoutes from './routes/feedback.js';
 import donationRoutes from './routes/donations.js';
+import uploadRoutes from './routes/uploads.js';
 
 // Connect to database
 connectDB();
@@ -47,35 +48,62 @@ app.use('/api/assignments', assignmentRoutes);
 app.use('/api/ngo', ngoRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/donate', donationRoutes);
+app.use('/api/uploads', uploadRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {
   res.json({ message: 'Server is running!', timestamp: new Date().toISOString() });
 });
 
-// Error handling middleware
+// Global error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  
+  // Log every error in detail
+  console.error('[GlobalErrorHandler]', {
+    name   : err.name,
+    message: err.message,
+    code   : err.code,
+    stack  : err.stack,
+    raw    : JSON.stringify(err)  // Catches non-standard error objects (e.g. Cloudinary API errors)
+  });
+
+  // Multer file upload errors
+  if (err.name === 'MulterError') {
+    const msg = err.code === 'LIMIT_FILE_SIZE'
+      ? 'File too large. Maximum size is 5 MB.'
+      : `Upload error: ${err.message}`;
+    return res.status(400).json({ message: msg });
+  }
+
+  // Custom file-filter error thrown by our fileFilter
+  if (err.message && err.message.startsWith('Invalid file type')) {
+    return res.status(400).json({ message: err.message });
+  }
+
+  // Mongoose validation error
   if (err.name === 'ValidationError') {
     const errors = Object.values(err.errors).map(e => e.message);
     return res.status(400).json({ message: 'Validation Error', errors });
   }
-  
+
+  // Mongoose cast error (bad ObjectId)
   if (err.name === 'CastError') {
     return res.status(400).json({ message: 'Invalid ID format' });
   }
-  
+
+  // Duplicate key (MongoDB unique index)
   if (err.code === 11000) {
-    const field = Object.keys(err.keyValue)[0];
+    const field = Object.keys(err.keyValue || {})[0] || 'field';
     return res.status(400).json({ message: `${field} already exists` });
   }
-  
-  res.status(500).json({ 
-    message: process.env.NODE_ENV === 'production' ? 'Server Error' : err.message,
-    stack: process.env.NODE_ENV === 'production' ? null : err.stack
+
+  // Fallback — always include a message so we never return {}
+  const statusCode = err.statusCode || err.status || 500;
+  res.status(statusCode).json({
+    message: err.message || 'Internal Server Error',
+    stack  : process.env.NODE_ENV === 'production' ? undefined : err.stack
   });
 });
+
 
 // 404 handler
 app.use('*', (req, res) => {

@@ -62,7 +62,14 @@ const AdminDashboard = () => {
         api.get('/admin/users?role=ngo')
       ]);
 
-      setStats(statsRes.data);
+      const statsData = statsRes.data;
+      setStats({
+        totalComplaints: statsData.overview?.totalComplaints || 0,
+        pending: statsData.overview?.pendingComplaints || 0,
+        assigned: statsData.overview?.assignedComplaints || 0,
+        completed: statsData.overview?.completedComplaints || 0,
+        totalUsers: statsData.users?.totalUsers || 0
+      });
       setComplaints(complaintsRes.data);
       setFilteredComplaints(complaintsRes.data);
       setEmployees(employeesRes.data);
@@ -111,11 +118,18 @@ const AdminDashboard = () => {
   const getAssigneeInfo = (complaint) => {
     if (!complaint.assignedTo) return null;
     
-    const assignee = complaint.assigneeType === 'employee' 
-      ? employees.find(emp => emp._id === complaint.assignedTo)
-      : ngos.find(ngo => ngo._id === complaint.assignedTo);
+    if (complaint.assignedTo.name) {
+       return `${complaint.assignedTo.name} (${complaint.assignedType || 'unknown'})`;
+    }
 
-    return assignee ? `${assignee.name} (${complaint.assigneeType})` : 'Unknown';
+    const assigneeId = typeof complaint.assignedTo === 'object' ? complaint.assignedTo._id : complaint.assignedTo;
+    const assigneeType = complaint.assignedType || complaint.assigneeType;
+
+    const assignee = assigneeType === 'employee' 
+      ? employees.find(emp => emp._id === assigneeId)
+      : ngos.find(ngo => ngo._id === assigneeId);
+
+    return assignee ? `${assignee.name} (${assigneeType})` : 'Unknown';
   };
 
   return (

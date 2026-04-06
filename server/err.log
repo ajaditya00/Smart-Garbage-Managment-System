@@ -1,11 +1,2 @@
-Error: Error: Images only (jpeg, jpg, png, gif)
-    at fileFilter (file:///Users/adityaraj/Desktop/testingProject/swachh-ai/server/middleware/upload.js:32:8)
-    at wrappedFileFilter (/Users/adityaraj/Desktop/testingProject/swachh-ai/server/node_modules/multer/index.js:44:7)
-    at Multipart.<anonymous> (/Users/adityaraj/Desktop/testingProject/swachh-ai/server/node_modules/multer/lib/make-middleware.js:109:7)
-    at Multipart.emit (node:events:508:28)
-    at HeaderParser.cb (/Users/adityaraj/Desktop/testingProject/swachh-ai/server/node_modules/busboy/lib/types/multipart.js:358:14)
-    at HeaderParser.push (/Users/adityaraj/Desktop/testingProject/swachh-ai/server/node_modules/busboy/lib/types/multipart.js:162:20)
-    at SBMH.ssCb [as _cb] (/Users/adityaraj/Desktop/testingProject/swachh-ai/server/node_modules/busboy/lib/types/multipart.js:394:37)
-    at feed (/Users/adityaraj/Desktop/testingProject/swachh-ai/server/node_modules/streamsearch/lib/sbmh.js:219:14)
-    at SBMH.push (/Users/adityaraj/Desktop/testingProject/swachh-ai/server/node_modules/streamsearch/lib/sbmh.js:104:16)
-    at Multipart._write (/Users/adityaraj/Desktop/testingProject/swachh-ai/server/node_modules/busboy/lib/types/multipart.js:567:19)
+undefined
+undefined
