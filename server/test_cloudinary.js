@@ -10,7 +10,7 @@ cloudinary.config({
 
 async function testCloudinary() {
   try {
-    const result = await cloudinary.uploader.upload('https://raw.githubusercontent.com/cloudinary/cloudinary-training/master/assets/images/cloudinary_logo.png', {
+    const result = await cloudinary.uploader.upload('https://res.cloudinary.com/demo/image/upload/sample.jpg', {
       folder: 'test'
     });
     console.log('Upload success:', result.secure_url);

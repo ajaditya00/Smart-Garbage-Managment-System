@@ -7,7 +7,7 @@ import {
   updateComplaintStatus
 } from '../controllers/complaintController.js';
 import { protect, authorize } from '../middleware/auth.js';
-import upload from '../middleware/upload.js';
+import { complaintUpload } from '../middleware/upload.js';
 
 const router = express.Router();
 
@@ -29,9 +29,9 @@ const statusValidation = [
     .withMessage('Invalid status')
 ];
 
-router.post('/', protect, authorize('citizen'), upload.single('image'), complaintValidation, createComplaint);
+router.post('/', protect, authorize('citizen'), complaintUpload.single('image'), complaintValidation, createComplaint);
 router.get('/', protect, getComplaints);
 router.get('/:id', protect, getComplaint);
-router.put('/:id/status', protect, authorize('employee', 'ngo'), upload.single('proofImage'), statusValidation, updateComplaintStatus);
+router.put('/:id/status', protect, authorize('employee', 'ngo'), complaintUpload.single('proofImage'), statusValidation, updateComplaintStatus);
 
 export default router;
