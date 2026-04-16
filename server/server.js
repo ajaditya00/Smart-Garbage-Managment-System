@@ -21,6 +21,7 @@ import ngoRoutes from './routes/ngo.js';
 import feedbackRoutes from './routes/feedback.js';
 import donationRoutes from './routes/donations.js';
 import uploadRoutes from './routes/uploads.js';
+import publicRoutes from './routes/public.js';
 
 // Connect to database
 connectDB();
@@ -49,6 +50,7 @@ app.use('/api/ngo', ngoRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/donate', donationRoutes);
 app.use('/api/uploads', uploadRoutes);
+app.use('/api/public', publicRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

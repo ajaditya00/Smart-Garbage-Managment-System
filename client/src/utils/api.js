@@ -56,6 +56,8 @@ export const adminAPI = {
   assign: (data) => API.post('/admin/assign', data),
   getUsers: (role) => API.get('/admin/users', { params: { role } }),
   getStats: () => API.get('/admin/stats'),
+  verify: (id) => API.put(`/admin/verify/${id}`),
+  reject: (id) => API.put(`/admin/reject/${id}`),
 };
 
 // NGO APIs

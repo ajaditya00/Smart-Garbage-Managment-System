@@ -46,6 +46,7 @@ const Navbar = () => {
         ...commonItems,
         { path: '/admin/complaints', label: 'All Complaints', icon: FileText },
         { path: '/admin/users', label: 'Manage Users', icon: Users },
+        { path: '/admin/donations', label: 'Donations', icon: Heart },
         { path: '/admin/analytics', label: 'Analytics', icon: BarChart3 }
       ];
     }
@@ -98,10 +99,10 @@ const Navbar = () => {
             whileHover={{ scale: 1.02 }}
           >
             <Link to="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">SA</span>
+              <div className="w-10 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-xs">SGMS</span>
               </div>
-              <span className="text-xl font-bold text-gray-900">Swachh AI</span>
+              <span className="text-xl font-bold text-gray-900 hidden sm:block">Smart Garbage Management System</span>
             </Link>
           </motion.div>
 

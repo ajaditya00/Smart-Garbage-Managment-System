@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 
-const StatsCounter = ({ end, duration = 2, suffix = '', prefix = '' }) => {
+const StatsCounter = ({ end, duration = 2, suffix = '', prefix = '', color = 'text-primary-600' }) => {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
@@ -26,7 +26,7 @@ const StatsCounter = ({ end, duration = 2, suffix = '', prefix = '' }) => {
     <motion.span
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="text-2xl font-bold text-primary-600"
+      className={`text-2xl font-bold ${color}`}
     >
       {prefix}{count.toLocaleString()}{suffix}
     </motion.span>

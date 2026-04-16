@@ -84,7 +84,7 @@ const Landing = () => {
             >
               <h1 className="text-5xl lg:text-6xl font-bold text-white mb-6">
                 Make India{' '}
-                <span className="text-yellow-300">Swachh</span>{' '}
+                <span className="text-yellow-300">Smart Garbage</span>{' '}
                 with AI
               </h1>
               <p className="text-xl text-green-100 mb-8">
@@ -157,7 +157,7 @@ const Landing = () => {
             className="text-center mb-16"
           >
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Why Choose Swachh AI?
+              Why Choose Smart Garbage Management System?
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               Our AI-powered platform makes garbage monitoring and collection 

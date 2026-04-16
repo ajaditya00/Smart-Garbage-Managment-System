@@ -51,8 +51,20 @@ const complaintSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'assigned', 'in-progress', 'completed', 'verified'],
+    enum: ['pending', 'assigned', 'in-progress', 'completed', 'verified', 'rejected'],
     default: 'pending'
+  },
+  proofImage: {
+    type: String,
+    default: null
+  },
+  feedbackRating: {
+    type: Number,
+    default: null
+  },
+  feedbackComment: {
+    type: String,
+    default: null
   },
   assignedTo: {
     type: mongoose.Schema.Types.ObjectId,
