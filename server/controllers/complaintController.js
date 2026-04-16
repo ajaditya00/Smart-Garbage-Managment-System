@@ -156,6 +156,8 @@ const updateComplaintStatus = async (req, res) => {
     if (status === 'completed' && req.file) {
       // Cloudinary URL for proof image
       const proofUrl = req.file.path || req.file.secure_url;
+      complaint.proofImage = proofUrl; // Save to complaint as well for easy access
+      
       await Assignment.findOneAndUpdate(
         { complaintId: complaint._id, assigneeId: req.user._id },
         {

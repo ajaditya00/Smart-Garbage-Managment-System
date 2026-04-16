@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, Calendar, Hand, CheckCircle, Clock, Play, Upload, Users } from 'lucide-react';
+import { MapPin, Calendar, Hand, CheckCircle, Clock, Play, Upload, ShieldCheck, ClipboardList, Hash, TrendingUp } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../utils/api';
 import AnimatedCard from '../components/AnimatedCard';
@@ -12,9 +12,10 @@ const NgoDashboard = () => {
   const [availableTasks, setAvailableTasks] = useState([]);
   const [myTasks, setMyTasks] = useState([]);
   const [stats, setStats] = useState({
-    available: 0,
-    myTasks: 0,
-    completed: 0
+    total: 0,
+    assigned: 0,
+    inProgress: 0,
+    pendingVerification: 0
   });
   const [loading, setLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState(null);
@@ -38,8 +39,8 @@ const NgoDashboard = () => {
   ];
 
   const tabs = [
-    { key: 'available', label: 'Available Tasks', count: stats.available },
-    { key: 'my-tasks', label: 'My Tasks', count: stats.myTasks }
+    { key: 'available', label: 'Available Tasks', count: stats.total },
+    { key: 'my-tasks', label: 'My Tasks', count: stats.assigned + stats.inProgress + stats.pendingVerification }
   ];
 
   useEffect(() => {
@@ -54,9 +55,10 @@ const NgoDashboard = () => {
       setAvailableTasks(availableTasks);
       setMyTasks(assignedTasks);
       setStats({
-        available: availableTasks.length,
-        myTasks: assignedTasks.length,
-        completed: assignedTasks.filter(t => t.status === 'completed' || t.status === 'verified').length
+        total: availableTasks.length,
+        assigned: assignedTasks.filter(t => t.status === 'assigned').length,
+        inProgress: assignedTasks.filter(t => t.status === 'in-progress').length,
+        pendingVerification: assignedTasks.filter(t => t.status === 'completed').length
       });
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -289,38 +291,28 @@ const NgoDashboard = () => {
         </motion.div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {[
-            { 
-              label: 'Available Tasks', 
-              value: stats.available, 
-              color: 'bg-yellow-500',
-              icon: Users
-            },
-            { 
-              label: 'My Tasks', 
-              value: stats.myTasks, 
-              color: 'bg-blue-500',
-              icon: Clock
-            },
-            { 
-              label: 'Completed', 
-              value: stats.completed, 
-              color: 'bg-green-500',
-              icon: CheckCircle
-            }
+            { label: 'Total Tasks', value: stats.total, icon: ClipboardList, gradient: 'from-blue-500 to-indigo-700' },
+            { label: 'Assigned', value: stats.assigned, icon: Hash, gradient: 'from-yellow-400 to-orange-500' },
+            { label: 'In Progress', value: stats.inProgress, icon: TrendingUp, gradient: 'from-orange-500 to-red-600' },
+            { label: 'Pending Verification', value: stats.pendingVerification, icon: ShieldCheck, gradient: 'from-purple-500 to-fuchsia-700' }
           ].map((stat, index) => {
             const Icon = stat.icon;
             return (
               <AnimatedCard key={index} delay={index * 0.1}>
-                <div className="p-6">
-                  <div className={`w-12 h-12 ${stat.color} rounded-lg flex items-center justify-center mb-4`}>
-                    <Icon className="text-white" size={24} />
+                <div className={`p-6 text-white rounded-xl bg-gradient-to-br ${stat.gradient} shadow-lg relative overflow-hidden h-full`}>
+                  <div className="absolute top-0 right-0 p-4 opacity-20 transform translate-x-2 -translate-y-2">
+                    <Icon size={80} />
                   </div>
-                  <div className="text-2xl font-bold text-gray-900 mb-1">
-                    <StatsCounter end={stat.value} duration={1.5} />
+                  <div className="relative z-10">
+                     <h3 className="text-sm font-medium text-white/90 flex items-center mb-2">
+                       <Icon className="mr-2" size={16} /> {stat.label}
+                     </h3>
+                     <div className="text-4xl font-bold mb-1">
+                       <StatsCounter end={stat.value} duration={1.5} color="text-white" />
+                     </div>
                   </div>
-                  <p className="text-gray-600 text-sm">{stat.label}</p>
                 </div>
               </AnimatedCard>
             );

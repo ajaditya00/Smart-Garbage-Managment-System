@@ -2,6 +2,7 @@ import User from '../models/User.js';
 import Complaint from '../models/Complaint.js';
 import Assignment from '../models/Assignment.js';
 import Feedback from '../models/Feedback.js';
+import Donation from '../models/Donation.js';
 
 // @desc    Assign complaint to employee or NGO
 // @route   POST /api/admin/assign
@@ -78,6 +79,8 @@ const getDashboardStats = async (req, res) => {
     const assignedComplaints = await Complaint.countDocuments({ status: 'assigned' });
     const inProgressComplaints = await Complaint.countDocuments({ status: 'in-progress' });
     const completedComplaints = await Complaint.countDocuments({ status: 'completed' });
+    const verifiedComplaints = await Complaint.countDocuments({ status: 'verified' });
+    const rejectedComplaints = await Complaint.countDocuments({ status: 'rejected' });
 
     const totalUsers = await User.countDocuments();
     const citizenCount = await User.countDocuments({ role: 'citizen' });
@@ -142,7 +145,9 @@ const getDashboardStats = async (req, res) => {
         assignedComplaints,
         inProgressComplaints,
         completedComplaints,
-        resolutionRate: totalComplaints > 0 ? ((completedComplaints / totalComplaints) * 100).toFixed(1) : 0
+        verifiedComplaints,
+        rejectedComplaints,
+        resolutionRate: totalComplaints > 0 ? (((completedComplaints + verifiedComplaints) / totalComplaints) * 100).toFixed(1) : 0
       },
       users: {
         totalUsers,
@@ -163,8 +168,65 @@ const getDashboardStats = async (req, res) => {
   }
 };
 
+// @desc    Get all donations
+// @route   GET /api/admin/donations
+// @access  Private (Admin)
+const getAllDonations = async (req, res) => {
+  try {
+    const donations = await Donation.find()
+      .populate('userId', 'name email')
+      .sort({ createdAt: -1 });
+    res.json(donations);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Verify completed complaint
+// @route   PUT /api/admin/verify/:id
+// @access  Private (Admin)
+const verifyComplaint = async (req, res) => {
+  try {
+    const complaint = await Complaint.findById(req.params.id);
+    if (!complaint) return res.status(404).json({ message: 'Complaint not found' });
+    
+    complaint.status = 'verified';
+    complaint.updatedAt = Date.now();
+    await complaint.save();
+    
+    res.json(complaint);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Reject completed complaint
+// @route   PUT /api/admin/reject/:id
+// @access  Private (Admin)
+const rejectComplaint = async (req, res) => {
+  try {
+    const complaint = await Complaint.findById(req.params.id);
+    if (!complaint) return res.status(404).json({ message: 'Complaint not found' });
+    
+    // Status back to pending or rejected
+    complaint.status = 'rejected'; 
+    // Clear assignment so it can be reassigned
+    complaint.assignedTo = null;
+    complaint.assignedType = null;
+    complaint.updatedAt = Date.now();
+    await complaint.save();
+    
+    res.json(complaint);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 export {
   assignComplaint,
   getUsersByRole,
-  getDashboardStats
+  getDashboardStats,
+  getAllDonations,
+  verifyComplaint,
+  rejectComplaint
 };

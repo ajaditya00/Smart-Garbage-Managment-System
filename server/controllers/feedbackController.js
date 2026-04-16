@@ -24,8 +24,8 @@ const createFeedback = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized' });
     }
 
-    if (complaint.status !== 'completed') {
-      return res.status(400).json({ message: 'Can only provide feedback for completed complaints' });
+    if (complaint.status !== 'completed' && complaint.status !== 'verified') {
+      return res.status(400).json({ message: 'Can only provide feedback for completed or verified complaints' });
     }
 
     // Check if feedback already exists
@@ -44,6 +44,11 @@ const createFeedback = async (req, res) => {
       rating,
       comment
     });
+
+    // Update complaint with feedback for easy admin access
+    complaint.feedbackRating = rating;
+    complaint.feedbackComment = comment;
+    await complaint.save();
 
     await feedback.populate('userId', 'name email');
     await feedback.populate('complaintId', 'description category');

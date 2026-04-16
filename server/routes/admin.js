@@ -1,6 +1,6 @@
 import express from 'express';
 import { body } from 'express-validator';
-import { assignComplaint, getUsersByRole, getDashboardStats } from '../controllers/adminController.js';
+import { assignComplaint, getUsersByRole, getDashboardStats, getAllDonations, verifyComplaint, rejectComplaint } from '../controllers/adminController.js';
 import { protect, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -15,5 +15,8 @@ const assignValidation = [
 router.post('/assign', protect, authorize('admin'), assignValidation, assignComplaint);
 router.get('/users', protect, authorize('admin'), getUsersByRole);
 router.get('/stats', protect, authorize('admin'), getDashboardStats);
+router.get('/donations', protect, authorize('admin'), getAllDonations);
+router.put('/verify/:id', protect, authorize('admin'), verifyComplaint);
+router.put('/reject/:id', protect, authorize('admin'), rejectComplaint);
 
 export default router;

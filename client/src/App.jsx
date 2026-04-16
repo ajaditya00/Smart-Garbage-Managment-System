@@ -77,7 +77,7 @@ const DashboardRouter = () => {
     case 'citizen':
       return <CitizenDashboard />;
     case 'admin':
-      return <AdminDashboard />;
+      return <AdminDashboard activeTab="dashboard" />;
     case 'employee':
       return <EmployeeDashboard />;
     case 'ngo':
@@ -115,6 +115,61 @@ const AppRoutes = () => {
       {/* Protected Routes */}
       <Route path="/dashboard" element={
         <ProtectedRoute>
+          <PageWrapper>
+            <DashboardRouter />
+          </PageWrapper>
+        </ProtectedRoute>
+      } />
+
+      {/* Admin Nav Routes */}
+      <Route path="/admin/complaints" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <PageWrapper>
+            <AdminDashboard activeTab="complaints" />
+          </PageWrapper>
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/users" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <PageWrapper>
+            <AdminDashboard activeTab="users" />
+          </PageWrapper>
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/donations" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <PageWrapper>
+            <AdminDashboard activeTab="donations" />
+          </PageWrapper>
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/analytics" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <PageWrapper>
+            <AdminDashboard activeTab="analytics" />
+          </PageWrapper>
+        </ProtectedRoute>
+      } />
+
+      {/* Citizen Nav Routes */}
+      <Route path="/report" element={
+        <ProtectedRoute allowedRoles={['citizen']}>
+          <PageWrapper>
+            <CitizenDashboard />
+          </PageWrapper>
+        </ProtectedRoute>
+      } />
+      <Route path="/my-complaints" element={
+        <ProtectedRoute allowedRoles={['citizen']}>
+          <PageWrapper>
+            <CitizenDashboard />
+          </PageWrapper>
+        </ProtectedRoute>
+      } />
+
+      {/* Employee/NGO Nav Routes */}
+      <Route path="/tasks" element={
+        <ProtectedRoute allowedRoles={['employee', 'ngo']}>
           <PageWrapper>
             <DashboardRouter />
           </PageWrapper>
