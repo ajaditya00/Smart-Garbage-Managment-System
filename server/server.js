@@ -34,7 +34,9 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // CORS middleware
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' ? process.env.CLIENT_URL : 'http://localhost:5173',
+  origin: process.env.NODE_ENV === 'production' ? process.env.CLIENT_URL : [
+    'http://localhost:5173', 'https://smart-garbage-drab.vercel.app'
+  ]
   credentials: true
 }));
 
