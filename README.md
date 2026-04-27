@@ -1,4 +1,4 @@
-# 🌿 Swachh AI - Smart Garbage Monitoring & Collection System
+# Smart Garbage Monitoring & Collection System
 
 AI-powered platform for citizens to report garbage, with municipal admin task management, employee/NGO tracking, and Razorpay donations.
 
