@@ -125,7 +125,7 @@ Open http://localhost:3000
 ### Backend → Render
 
 1. Push `server/` to a GitHub repo (or use the monorepo)
-2. Go to [render.com](https://render.com) → **New Web Service**
+2. Go to [render.com]([(https://smart-garbage-drab.vercel.app/)]) → **New Web Service**
 3. Connect your repo
 4. Settings:
    - **Root Directory:** `server`
