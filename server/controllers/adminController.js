@@ -3,6 +3,7 @@ import Complaint from '../models/Complaint.js';
 import Assignment from '../models/Assignment.js';
 import Feedback from '../models/Feedback.js';
 import Donation from '../models/Donation.js';
+import { recordAuditLog } from '../utils/auditLogger.js';
 
 // @desc    Assign complaint to employee or NGO
 // @route   POST /api/admin/assign
@@ -35,7 +36,7 @@ const assignComplaint = async (req, res) => {
     await complaint.save();
 
     // Create assignment record
-    await Assignment.create({
+    const assignment = await Assignment.create({
       complaintId,
       assigneeId,
       assigneeType
@@ -43,6 +44,23 @@ const assignComplaint = async (req, res) => {
 
     await complaint.populate('userId', 'name email');
     await complaint.populate('assignedTo', 'name role');
+
+    // Audit Log: ASSIGN Complaint
+    recordAuditLog({
+      req,
+      action: 'ASSIGN',
+      resource: 'Complaint',
+      resourceId: complaint._id,
+      target: { title: complaint.title, name: assignee.name, identifier: complaint._id.toString() },
+      description: `Admin "${req.user.name}" assigned complaint "${complaint.title}" to ${assigneeType.toUpperCase()} "${assignee.name}"`,
+      details: {
+        complaintId,
+        assigneeId,
+        assigneeName: assignee.name,
+        assigneeType,
+        assignmentId: assignment._id
+      }
+    });
 
     res.json(complaint);
   } catch (error) {
@@ -74,68 +92,80 @@ const getUsersByRole = async (req, res) => {
 // @access  Private (Admin)
 const getDashboardStats = async (req, res) => {
   try {
-    const totalComplaints = await Complaint.countDocuments();
-    const pendingComplaints = await Complaint.countDocuments({ status: 'pending' });
-    const assignedComplaints = await Complaint.countDocuments({ status: 'assigned' });
-    const inProgressComplaints = await Complaint.countDocuments({ status: 'in-progress' });
-    const completedComplaints = await Complaint.countDocuments({ status: 'completed' });
-    const verifiedComplaints = await Complaint.countDocuments({ status: 'verified' });
-    const rejectedComplaints = await Complaint.countDocuments({ status: 'rejected' });
-
-    const totalUsers = await User.countDocuments();
-    const citizenCount = await User.countDocuments({ role: 'citizen' });
-    const employeeCount = await User.countDocuments({ role: 'employee' });
-    const ngoCount = await User.countDocuments({ role: 'ngo' });
-
-    const totalFeedback = await Feedback.countDocuments();
-    const avgRating = await Feedback.aggregate([
-      {
-        $group: {
-          _id: null,
-          averageRating: { $avg: '$rating' }
-        }
-      }
-    ]);
-
-    // Recent complaints
-    const recentComplaints = await Complaint.find()
-      .populate('userId', 'name email')
-      .populate('assignedTo', 'name role')
-      .sort({ createdAt: -1 })
-      .limit(5);
-
-    // Complaints by category
-    const complaintsByCategory = await Complaint.aggregate([
-      {
-        $group: {
-          _id: '$category',
-          count: { $sum: 1 }
-        }
-      }
-    ]);
-
-    // Monthly complaints (last 6 months)
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-    
-    const monthlyComplaints = await Complaint.aggregate([
-      {
-        $match: {
-          createdAt: { $gte: sixMonthsAgo }
+
+    const [
+      totalComplaints,
+      pendingComplaints,
+      assignedComplaints,
+      inProgressComplaints,
+      completedComplaints,
+      verifiedComplaints,
+      rejectedComplaints,
+      totalUsers,
+      citizenCount,
+      employeeCount,
+      ngoCount,
+      totalFeedback,
+      avgRating,
+      recentComplaints,
+      complaintsByCategory,
+      monthlyComplaints
+    ] = await Promise.all([
+      Complaint.countDocuments(),
+      Complaint.countDocuments({ status: 'pending' }),
+      Complaint.countDocuments({ status: 'assigned' }),
+      Complaint.countDocuments({ status: 'in-progress' }),
+      Complaint.countDocuments({ status: 'completed' }),
+      Complaint.countDocuments({ status: 'verified' }),
+      Complaint.countDocuments({ status: 'rejected' }),
+      User.countDocuments(),
+      User.countDocuments({ role: 'citizen' }),
+      User.countDocuments({ role: 'employee' }),
+      User.countDocuments({ role: 'ngo' }),
+      Feedback.countDocuments(),
+      Feedback.aggregate([
+        {
+          $group: {
+            _id: null,
+            averageRating: { $avg: '$rating' }
+          }
         }
-      },
-      {
-        $group: {
-          _id: {
-            year: { $year: '$createdAt' },
-            month: { $month: '$createdAt' }
-          },
-          count: { $sum: 1 }
+      ]),
+      Complaint.find()
+        .populate('userId', 'name email')
+        .populate('assignedTo', 'name role')
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .lean(),
+      Complaint.aggregate([
+        {
+          $group: {
+            _id: '$category',
+            count: { $sum: 1 }
+          }
         }
-      },
-      {
-        $sort: { '_id.year': 1, '_id.month': 1 }
-      }
+      ]),
+      Complaint.aggregate([
+        {
+          $match: {
+            createdAt: { $gte: sixMonthsAgo }
+          }
+        },
+        {
+          $group: {
+            _id: {
+              year: { $year: '$createdAt' },
+              month: { $month: '$createdAt' }
+            },
+            count: { $sum: 1 }
+          }
+        },
+        {
+          $sort: { '_id.year': 1, '_id.month': 1 }
+        }
+      ])
     ]);
 
     res.json({
@@ -193,6 +223,20 @@ const verifyComplaint = async (req, res) => {
     complaint.status = 'verified';
     complaint.updatedAt = Date.now();
     await complaint.save();
+
+    // Audit Log: STATUS_CHANGE (verified)
+    recordAuditLog({
+      req,
+      action: 'STATUS_CHANGE',
+      resource: 'Complaint',
+      resourceId: complaint._id,
+      target: { title: complaint.title, identifier: complaint._id.toString() },
+      description: `Admin "${req.user.name}" verified and accepted resolution for complaint "${complaint.title}"`,
+      details: {
+        previousStatus: 'completed',
+        newStatus: 'verified'
+      }
+    });
     
     res.json(complaint);
   } catch (error) {
@@ -208,15 +252,102 @@ const rejectComplaint = async (req, res) => {
     const complaint = await Complaint.findById(req.params.id);
     if (!complaint) return res.status(404).json({ message: 'Complaint not found' });
     
-    // Status back to pending or rejected
+    // Status back to rejected
     complaint.status = 'rejected'; 
-    // Clear assignment so it can be reassigned
     complaint.assignedTo = null;
     complaint.assignedType = null;
     complaint.updatedAt = Date.now();
     await complaint.save();
+
+    // Audit Log: STATUS_CHANGE (rejected)
+    recordAuditLog({
+      req,
+      action: 'STATUS_CHANGE',
+      resource: 'Complaint',
+      resourceId: complaint._id,
+      target: { title: complaint.title, identifier: complaint._id.toString() },
+      description: `Admin "${req.user.name}" rejected cleanup submission for complaint "${complaint.title}" and reset assignments`,
+      details: {
+        previousStatus: 'completed',
+        newStatus: 'rejected'
+      }
+    });
     
     res.json(complaint);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Delete user
+// @route   DELETE /api/admin/users/:id
+// @access  Private (Admin)
+const deleteUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    if (user._id.toString() === req.user._id.toString()) {
+      return res.status(400).json({ message: 'Cannot delete your own admin account' });
+    }
+
+    await User.findByIdAndDelete(req.params.id);
+
+    // Audit Log: DELETE User
+    recordAuditLog({
+      req,
+      action: 'DELETE',
+      resource: 'User',
+      resourceId: req.params.id,
+      target: { name: user.name, email: user.email, identifier: req.params.id },
+      description: `Admin "${req.user.name}" deleted user account "${user.name}" (${user.email})`,
+      details: {
+        deletedUserId: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
+
+    res.json({ success: true, message: 'User deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Update user role
+// @route   PUT /api/admin/users/:id/role
+// @access  Private (Admin)
+const updateUserRole = async (req, res) => {
+  try {
+    const { role } = req.body;
+    if (!['citizen', 'employee', 'ngo', 'admin'].includes(role)) {
+      return res.status(400).json({ message: 'Invalid role' });
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const oldRole = user.role;
+    user.role = role;
+    await user.save();
+
+    // Audit Log: UPDATE User
+    recordAuditLog({
+      req,
+      action: 'UPDATE',
+      resource: 'User',
+      resourceId: user._id,
+      target: { name: user.name, email: user.email, identifier: user._id.toString() },
+      description: `Admin "${req.user.name}" updated role of "${user.name}" from "${oldRole}" to "${role}"`,
+      details: {
+        userId: user._id,
+        previousRole: oldRole,
+        newRole: role
+      }
+    });
+
+    res.json({ success: true, user: { _id: user._id, name: user.name, email: user.email, role: user.role } });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -228,5 +359,7 @@ export {
   getDashboardStats,
   getAllDonations,
   verifyComplaint,
-  rejectComplaint
+  rejectComplaint,
+  deleteUser,
+  updateUserRole
 };

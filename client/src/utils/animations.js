@@ -21,46 +21,41 @@ export const staggerContainer = {
   }
 };
 
-// Card animation variants
+// Card animation variants - minimal, subtle elevation without aggressive bouncing
 export const cardVariants = {
-  initial: { opacity: 0, y: 50, scale: 0.9 },
+  initial: { opacity: 0, y: 12 },
   animate: {
     opacity: 1,
     y: 0,
-    scale: 1,
     transition: {
-      type: 'spring',
-      stiffness: 100,
-      damping: 15
+      duration: 0.25,
+      ease: 'easeOut'
     }
   },
   hover: {
-    y: -5,
-    scale: 1.02,
+    y: 0,
     transition: {
-      type: 'spring',
-      stiffness: 400,
-      damping: 10
+      duration: 0.15,
+      ease: 'easeInOut'
     }
   }
 };
 
-// Button animation variants
+// Button animation variants - restrained micro-interaction without scaling distortion
 export const buttonVariants = {
   idle: { scale: 1 },
   hover: {
-    scale: 1.05,
-    boxShadow: '0 10px 20px rgba(0, 0, 0, 0.2)',
+    scale: 1,
     transition: {
-      type: 'spring',
-      stiffness: 400,
-      damping: 10
+      duration: 0.15,
+      ease: 'easeInOut'
     }
   },
   tap: {
     scale: 0.98,
     transition: {
-      duration: 0.1
+      duration: 0.1,
+      ease: 'easeInOut'
     }
   }
 };

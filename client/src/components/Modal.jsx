@@ -19,7 +19,7 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
           <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
             {/* Backdrop */}
             <motion.div
-              className="fixed inset-0 bg-black bg-opacity-50"
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm"
               variants={backdropVariants}
               initial="initial"
               animate="animate"
@@ -29,7 +29,7 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
 
             {/* Modal */}
             <motion.div
-              className={`inline-block w-full ${sizes[size]} p-6 my-8 overflow-hidden text-left align-middle bg-white shadow-xl rounded-2xl relative`}
+              className={`inline-block w-full ${sizes[size]} p-6 my-8 overflow-hidden text-left align-middle bg-white dark:bg-neutral-900 shadow-2xl rounded-2xl relative border border-neutral-200 dark:border-neutral-800`}
               variants={modalVariants}
               initial="initial"
               animate="animate"
@@ -38,13 +38,14 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
               {/* Header */}
               <div className="flex items-center justify-between mb-4">
                 {title && (
-                  <h3 className="text-lg font-medium text-gray-900">
+                  <h3 className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
                     {title}
                   </h3>
                 )}
                 <button
                   onClick={onClose}
-                  className="p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                  aria-label="Close modal"
+                  className="p-1.5 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
                 >
                   <X size={20} />
                 </button>
