@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, Calendar, Camera, CheckCircle, Clock, Play, Upload, Hash, CheckSquare, ClipboardList, TrendingUp } from 'lucide-react';
+import { MapPin, Calendar, Camera, CheckCircle, Clock, Play, Upload, Hash, CheckSquare, ClipboardList, TrendingUp, Sparkles, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../utils/api';
-import AnimatedCard from '../components/AnimatedCard';
+import Button from '../components/Button';
+import Card from '../components/Card';
+import Modal from '../components/Modal';
+import StatusBadge from '../components/StatusBadge';
+import SkeletonLoader from '../components/SkeletonLoader';
 import ImageUpload from '../components/ImageUpload';
 import StatsCounter from '../components/StatsCounter';
+import EmptyState from '../components/EmptyState';
 
 const EmployeeDashboard = () => {
   const [tasks, setTasks] = useState([]);
@@ -21,18 +26,6 @@ const EmployeeDashboard = () => {
   const [proofImage, setProofImage] = useState(null);
   const [proofImageFile, setProofImageFile] = useState(null);
   const [updating, setUpdating] = useState(false);
-
-  const statusColors = {
-    assigned: 'bg-blue-100 text-blue-800',
-    'in-progress': 'bg-orange-100 text-orange-800',
-    completed: 'bg-green-100 text-green-800',
-    verified: 'bg-purple-100 text-purple-800'
-  };
-
-  const statusOptions = [
-    { value: 'in-progress', label: 'Start Work (In Progress)', icon: Play },
-    { value: 'completed', label: 'Mark as Completed', icon: CheckCircle }
-  ];
 
   useEffect(() => {
     fetchData();
@@ -102,276 +95,207 @@ const EmployeeDashboard = () => {
     return new Date(dateString).toLocaleDateString('en-IN', {
       day: 'numeric',
       month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      year: 'numeric'
     });
   };
 
-  const getNextStatus = (currentStatus) => {
-    if (currentStatus === 'assigned') return 'in-progress';
-    if (currentStatus === 'in-progress') return 'completed';
-    return null;
-  };
-
-  const canUpdateStatus = (task) => {
-    return task.status === 'assigned' || task.status === 'in-progress';
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <h1 className="text-3xl font-bold text-gray-900">Employee Dashboard</h1>
-          <p className="text-gray-600 mt-1">Manage your assigned cleanup tasks</p>
-        </motion.div>
+    <div className="space-y-6 text-left">
+      
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-black tracking-tight text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+          <Sparkles className="text-brand-500" size={20} /> Municipal Tasks Workspace
+        </h1>
+        <p className="text-xs text-neutral-500">
+          Monitor your assigned ward cleanups, update task progress, and submit action proof images.
+        </p>
+      </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      {/* Stats Counter Widget */}
+      <Card className="border border-neutral-200/50 dark:border-neutral-800 bg-white dark:bg-neutral-900/60 p-5 rounded-2xl shadow-sm">
+        <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest flex items-center gap-1.5 pb-3 border-b border-neutral-100 dark:border-neutral-800 mb-5">
+          <TrendingUp size={14} className="text-brand-500" /> Work Capacity Metrics
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {[
-            { label: 'Total Tasks', value: stats.total, icon: ClipboardList, gradient: 'from-blue-500 to-indigo-700' },
-            { label: 'Assigned', value: stats.assigned, icon: Hash, gradient: 'from-yellow-400 to-orange-500' },
-            { label: 'In Progress', value: stats.inProgress, icon: TrendingUp, gradient: 'from-orange-500 to-red-600' },
-            { label: 'Completed', value: stats.completed, icon: CheckSquare, gradient: 'from-green-500 to-emerald-700' }
-          ].map((stat, index) => {
+            { label: 'Assigned Tasks', value: stats.assigned, icon: Clock, colors: 'bg-brand-50/50 text-brand-600 border border-brand-100 dark:bg-brand-950/10 dark:border-brand-900/30' },
+            { label: 'In Progress', value: stats.inProgress, icon: Play, colors: 'bg-amber-50/50 text-amber-600 border border-amber-100 dark:bg-amber-950/10 dark:border-amber-900/30' },
+            { label: 'Completed Jobs', value: stats.completed, icon: CheckCircle, colors: 'bg-emerald-50/50 text-emerald-600 border border-emerald-100 dark:bg-emerald-950/10 dark:border-emerald-900/30' },
+            { label: 'Cumulative Backlog', value: stats.total, icon: ClipboardList, colors: 'bg-purple-50/50 text-purple-600 border border-purple-100 dark:bg-purple-950/10 dark:border-purple-900/30' }
+          ].map((stat, idx) => {
             const Icon = stat.icon;
             return (
-              <AnimatedCard key={index} delay={index * 0.1}>
-                <div className={`p-6 text-white rounded-xl bg-gradient-to-br ${stat.gradient} shadow-lg relative overflow-hidden h-full`}>
-                  <div className="absolute top-0 right-0 p-4 opacity-20 transform translate-x-2 -translate-y-2">
-                    <Icon size={80} />
-                  </div>
-                  <div className="relative z-10">
-                     <h3 className="text-sm font-medium text-white/90 flex items-center mb-2">
-                       <Icon className="mr-2" size={16} /> {stat.label}
-                     </h3>
-                     <div className="text-4xl font-bold mb-1">
-                       <StatsCounter end={stat.value} duration={1.5} color="text-white" />
-                     </div>
+              <div key={idx} className={`p-4 rounded-xl flex items-center justify-between ${stat.colors}`}>
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-widest opacity-80 mb-1">{stat.label}</p>
+                  <div className="text-xl font-black">
+                    <StatsCounter end={stat.value} duration={1} color="currentColor" />
                   </div>
                 </div>
-              </AnimatedCard>
+                <Icon size={18} className="opacity-75" />
+              </div>
             );
           })}
         </div>
+      </Card>
 
-        {/* Tasks List */}
-        <div className="space-y-6">
-          <h2 className="text-2xl font-bold text-gray-900">My Tasks</h2>
-          
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-white rounded-xl p-6 animate-pulse">
-                  <div className="h-48 bg-gray-200 rounded-lg mb-4"></div>
-                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                </div>
-              ))}
-            </div>
-          ) : tasks.length === 0 ? (
-            <AnimatedCard>
-              <div className="p-8 text-center">
-                <Clock className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No tasks assigned</h3>
-                <p className="text-gray-600">You have no assigned cleanup tasks at the moment</p>
-              </div>
-            </AnimatedCard>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {tasks.map((task, index) => (
-                <AnimatedCard key={task._id} delay={index * 0.1}>
-                  <div className="relative overflow-hidden">
-                    <img
-                      src={task.image}
-                      alt={task.title}
-                      className="w-full h-48 object-cover"
-                    />
-                    <div className="absolute top-4 right-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[task.status]}`}>
-                        {task.status.replace('-', ' ').toUpperCase()}
-                      </span>
-                    </div>
+      {/* Task List Section */}
+      <div className="space-y-4">
+        <h2 className="text-sm font-black text-neutral-800 dark:text-neutral-200 uppercase tracking-widest border-b border-neutral-200/50 dark:border-neutral-800 pb-2">
+          My Active Assignments List
+        </h2>
+
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2].map((i) => (
+              <SkeletonLoader key={i} variant="card" />
+            ))}
+          </div>
+        ) : tasks.length === 0 ? (
+          <EmptyState
+            icon={ClipboardList}
+            title="No tasks assigned yet"
+            description="You currently have an empty queue. Once administrators assign a garbage spot in your ward, it will appear here."
+          />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {tasks.map((task, index) => (
+              <Card key={task._id} padding="p-0" className="border border-neutral-200/50 dark:border-neutral-800 bg-white dark:bg-neutral-900 rounded-2xl overflow-hidden shadow-sm flex flex-col justify-between" delay={index * 0.05}>
+                <div className="relative">
+                  <img
+                    src={task.image}
+                    alt={task.title}
+                    className="w-full h-44 object-cover"
+                  />
+                  <div className="absolute top-3 right-3">
+                    <StatusBadge status={task.status} size="sm" />
                   </div>
-                  <div className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                </div>
+                <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                  <div>
+                    <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 truncate">
                       {task.title}
                     </h3>
-                    <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                    <p className="text-neutral-500 text-[11px] mt-1.5 line-clamp-2 leading-relaxed">
                       {task.description}
                     </p>
-                    <div className="flex items-center text-gray-500 text-sm mb-2">
-                      <MapPin size={16} className="mr-1" />
+                  </div>
+
+                  <div className="space-y-2 pt-2 border-t border-neutral-105 dark:border-neutral-800 text-[11px] font-medium text-neutral-500">
+                    <div className="flex items-center space-x-2">
+                      <MapPin size={12} className="text-neutral-400 shrink-0" />
                       <span className="truncate">{task.location.address}</span>
                     </div>
-                    <div className="flex items-center text-gray-500 text-sm mb-2">
-                      <Calendar size={16} className="mr-1" />
-                      <span>Assigned: {formatDate(task.assignedAt)}</span>
+                    <div className="flex items-center space-x-2">
+                      <Calendar size={12} className="text-neutral-400 shrink-0" />
+                      <span>{formatDate(task.createdAt)}</span>
                     </div>
-                    <div className="text-sm text-gray-600 mb-4">
-                      <strong>Reporter:</strong> {task.reportedBy?.name}
-                    </div>
-                    
-                    {/* Completion Proof */}
-                    {task.completionProof && (
-                      <div className="mb-4">
-                        <p className="text-sm font-medium text-gray-700 mb-2">Completion Proof:</p>
-                        <img
-                          src={task.completionProof}
-                          alt="Completion proof"
-                          className="w-full h-32 object-cover rounded-lg"
-                        />
-                      </div>
-                    )}
-                    
-                    {canUpdateStatus(task) && (
-                      <button
+                  </div>
+
+                  <div className="flex space-x-2 pt-1">
+                    {task.status !== 'completed' && task.status !== 'verified' && (
+                      <Button
                         onClick={() => {
                           setSelectedTask(task);
-                          setNewStatus(getNextStatus(task.status));
+                          setNewStatus(task.status === 'assigned' ? 'in-progress' : 'completed');
                         }}
-                        className="w-full bg-primary-500 hover:bg-primary-600 text-white py-2 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
+                        variant="primary"
+                        className="w-full text-[11px] py-2 rounded-lg bg-brand-500 text-white font-bold"
+                        icon={task.status === 'assigned' ? <Play size={12} /> : <CheckSquare size={12} />}
                       >
-                        {task.status === 'assigned' ? (
-                          <>
-                            <Play size={16} />
-                            <span>Start Work</span>
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle size={16} />
-                            <span>Mark Completed</span>
-                          </>
-                        )}
-                      </button>
+                        {task.status === 'assigned' ? 'Start Cleanup' : 'Complete Clean Job'}
+                      </Button>
+                    )}
+                    {(task.status === 'completed' || task.status === 'verified') && (
+                      <div className="w-full text-center py-2 text-xs font-black text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg border border-emerald-100 dark:border-emerald-900/30 flex items-center justify-center gap-1">
+                        <CheckCircle size={14} /> CLEANUP SUBMITTED
+                      </div>
                     )}
                   </div>
-                </AnimatedCard>
-              ))}
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Task Update Modal */}
+      <Modal
+        isOpen={!!selectedTask}
+        onClose={() => {
+          setSelectedTask(null);
+          setNewStatus('');
+          setProofImage(null);
+          setProofImageFile(null);
+        }}
+        title="Update Job Progress"
+        size="md"
+      >
+        <div className="space-y-5 text-left">
+          <div className="p-4 bg-neutral-50 dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-xl">
+            <label className="block text-xs font-black text-neutral-400 uppercase tracking-widest mb-1">
+              Active Task details
+            </label>
+            <p className="text-xs font-bold text-neutral-800 dark:text-neutral-200 truncate">{selectedTask?.title}</p>
+            <p className="text-[11px] text-neutral-500 mt-1 leading-normal">{selectedTask?.description}</p>
+          </div>
+
+          <div>
+            <label htmlFor="modalStatus" className="block text-xs font-black text-neutral-500 uppercase tracking-widest mb-1.5">
+              Update Status Phase
+            </label>
+            <select
+              id="modalStatus"
+              value={newStatus}
+              onChange={(e) => setNewStatus(e.target.value)}
+              className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-850 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
+            >
+              <option value="in-progress">In Progress</option>
+              <option value="completed">Completed (Proof Required)</option>
+            </select>
+          </div>
+
+          {newStatus === 'completed' && (
+            <div className="space-y-2">
+              <label className="block text-xs font-black text-neutral-500 uppercase tracking-widest">
+                Cleanup Proof Image Upload
+              </label>
+              <ImageUpload
+                onImageSelect={handleImageSelect}
+                selectedImage={proofImage}
+              />
+              <p className="text-[10px] text-neutral-400 italic">
+                * Upload clear photo evidence of the clean spot to submit to administrator for verification.
+              </p>
             </div>
           )}
         </div>
-      </div>
 
-      {/* Status Update Modal */}
-      <AnimatePresence>
-        {selectedTask && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+        <div className="flex space-x-4 pt-4 border-t border-neutral-100 dark:border-neutral-850 mt-5">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => {
+              setSelectedTask(null);
+              setNewStatus('');
+              setProofImage(null);
+              setProofImageFile(null);
+            }}
+            className="flex-1 rounded-xl text-xs py-2 bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
           >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-            >
-              <div className="p-6">
-                <div className="mb-6">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Update Task Status</h3>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="font-medium text-gray-900 mb-1">{selectedTask.title}</h4>
-                    <p className="text-sm text-gray-600">{selectedTask.description}</p>
-                  </div>
-                </div>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleStatusUpdate}
+            loading={updating}
+            className="flex-1 rounded-xl text-xs py-2 bg-brand-500 text-white"
+          >
+            Update Assignment
+          </Button>
+        </div>
+      </Modal>
 
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      New Status
-                    </label>
-                    <div className="space-y-2">
-                      {statusOptions
-                        .filter(option => {
-                          if (selectedTask.status === 'assigned') return option.value === 'in-progress';
-                          if (selectedTask.status === 'in-progress') return option.value === 'completed';
-                          return false;
-                        })
-                        .map((option) => {
-                          const Icon = option.icon;
-                          return (
-                            <label
-                              key={option.value}
-                              className={`flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 ${
-                                newStatus === option.value 
-                                  ? 'border-primary-500 bg-primary-50' 
-                                  : 'border-gray-200'
-                              }`}
-                            >
-                              <input
-                                type="radio"
-                                name="status"
-                                value={option.value}
-                                checked={newStatus === option.value}
-                                onChange={(e) => setNewStatus(e.target.value)}
-                                className="text-primary-600 focus:ring-primary-500"
-                              />
-                              <Icon size={20} className="text-gray-600" />
-                              <span className="font-medium text-gray-900">{option.label}</span>
-                            </label>
-                          );
-                        })}
-                    </div>
-                  </div>
-
-                  {newStatus === 'completed' && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Upload Completion Proof *
-                      </label>
-                      <ImageUpload
-                        onImageSelect={handleImageSelect}
-                        selectedImage={proofImage}
-                      />
-                      <p className="text-xs text-gray-500 mt-2">
-                        Please upload a photo showing the completed cleanup work
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex space-x-4 pt-6">
-                  <button
-                    onClick={() => {
-                      setSelectedTask(null);
-                      setNewStatus('');
-                      setProofImage(null);
-                      setProofImageFile(null);
-                    }}
-                    className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg font-medium transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleStatusUpdate}
-                    disabled={updating}
-                    className="flex-1 bg-primary-500 hover:bg-primary-600 disabled:opacity-50 text-white py-2 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
-                  >
-                    {updating ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        <span>Updating...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Upload size={16} />
-                        <span>Update Status</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };

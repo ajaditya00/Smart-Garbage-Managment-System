@@ -2,11 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Heart, CreditCard, CheckCircle, Gift, Leaf, Sparkles,
-  Shield, Zap, Users, TrendingUp, ArrowRight, Star
+  Shield, Zap, Users, TrendingUp, ArrowRight, Star, AlertCircle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
+import Button from '../components/Button';
+import Card from '../components/Card';
+import StatsCounter from '../components/StatsCounter';
 
 const presetAmounts = [
   { value: 100, label: '₹100', icon: '🌱', impact: 'Provides cleanup tools for 2 volunteers' },
@@ -21,11 +24,6 @@ const impactPoints = [
   { icon: '♻️', stat: '98%', label: 'Clean Rate' },
   { icon: '🏙️', stat: '50+', label: 'Cities Covered' },
 ];
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
-  show: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.6, delay: i * 0.1, ease: 'easeOut' } })
-};
 
 const Donation = () => {
   const { user } = useAuth();
@@ -96,351 +94,212 @@ const Donation = () => {
           } catch { toast.error('Payment verification failed'); }
         },
         prefill: { name: user.name, email: user.email, contact: user.phone || '' },
-        theme: { color: '#10B981' },
-        modal: { ondismiss: () => setLoading(false) }
+        theme: { color: '#10b981' }
       };
+
       const rzp = new window.Razorpay(options);
-      rzp.on('payment.failed', () => { toast.error('Payment failed. Please try again.'); setLoading(false); });
       rzp.open();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to initiate payment');
+      console.error('Razorpay payment error:', err);
+      toast.error('Payment initialization failed');
+    } finally {
       setLoading(false);
     }
   };
 
-  const formatDate = (d) => new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-  const formatAmount = (a) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(a);
-  const activeAmount = customAmount ? parseInt(customAmount) : selectedAmount;
-  const selectedPreset = presetAmounts.find(p => p.value === selectedAmount);
+  const formatAmount = (amt) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amt);
+  const formatDate = (ds) => new Date(ds).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+
+  const activeAmount = customAmount ? parseInt(customAmount) || 0 : selectedAmount;
+  const currentImpact = presetAmounts.find(p => p.value === selectedAmount)?.impact || 'Supports cleanup operational drives';
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="space-y-6 text-left">
+      
+      {/* Page Header */}
+      <div>
+        <h1 className="text-2xl font-black tracking-tight text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+          <Sparkles className="text-brand-500" size={20} /> Capital Support Registry
+        </h1>
+        <p className="text-xs text-neutral-500">
+          Support municipal cleanups, volunteer drives, and tools sourcing through transparent fund contributions.
+        </p>
+      </div>
 
-      {/* ===== SUCCESS OVERLAY ===== */}
       <AnimatePresence>
         {showSuccess && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="p-4 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-250 rounded-2xl flex items-center space-x-3 text-xs text-emerald-700 dark:text-emerald-400 font-bold"
           >
-            <motion.div initial={{ scale: 0.7, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.7, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 300 }}
-              className="bg-white rounded-[32px] p-12 max-w-md w-full mx-4 text-center shadow-2xl"
-            >
-              <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 0.5, repeat: 2 }}
-                className="w-24 h-24 bg-gradient-to-br from-emerald-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl shadow-emerald-500/30"
-              >
-                <Heart size={48} className="text-white fill-white" />
-              </motion.div>
-              <h2 className="text-3xl font-black text-gray-900 mb-3">Thank You! 🙏</h2>
-              <p className="text-gray-500 text-lg leading-relaxed">
-                Your generous donation is making India cleaner, one community at a time.
-              </p>
-              <div className="mt-8 bg-emerald-50 rounded-2xl p-4 border border-emerald-100">
-                <p className="text-emerald-700 font-semibold text-sm">💚 Your contribution has been recorded</p>
-              </div>
-              <button onClick={() => setShowSuccess(false)} className="mt-6 text-gray-400 text-sm hover:text-gray-600 transition-colors">
-                Close
-              </button>
-            </motion.div>
+            <CheckCircle size={16} />
+            <span>Thank you! Your transaction completed successfully and has been cataloged.</span>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ===== HERO BANNER ===== */}
-      <div className="relative bg-gradient-to-br from-gray-950 via-gray-900 to-emerald-950 overflow-hidden">
-        <div className="absolute inset-0 opacity-10"
-          style={{ backgroundImage: 'linear-gradient(rgba(34,197,94,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(34,197,94,0.3) 1px, transparent 1px)', backgroundSize: '50px 50px' }}>
-        </div>
-        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500 rounded-full blur-[150px] opacity-20"></div>
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-green-400 rounded-full blur-[100px] opacity-15"></div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Main Column - Select Amount & Donate */}
+        <div className="lg:col-span-2 space-y-6">
+          <Card className="border border-neutral-200/50 dark:border-neutral-800 bg-white dark:bg-neutral-900 rounded-2xl shadow-sm p-6 space-y-6">
+            
+            {/* Presets amounts layout */}
+            <div className="space-y-3">
+              <label className="block text-xs font-black text-neutral-500 uppercase tracking-widest">
+                Select Predefined Support Tier
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {presetAmounts.map((preset) => {
+                  const isSelected = selectedAmount === preset.value && !customAmount;
+                  return (
+                    <button
+                      key={preset.value}
+                      type="button"
+                      onClick={() => { setSelectedAmount(preset.value); setCustomAmount(''); }}
+                      className={`p-4 rounded-xl border-2 transition-all text-center flex flex-col justify-between cursor-pointer ${
+                        isSelected 
+                          ? 'border-brand-500 bg-brand-50/20 dark:bg-brand-950/10' 
+                          : 'border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:border-neutral-300'
+                      }`}
+                    >
+                      <span className="text-xl mb-1 select-none">{preset.icon}</span>
+                      <span className={`text-sm font-black ${isSelected ? 'text-brand-600 dark:text-brand-400' : 'text-neutral-800 dark:text-neutral-250'}`}>
+                        {preset.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <motion.div initial="hidden" animate="show" className="text-center space-y-6">
-            <motion.div custom={0} variants={fadeUp} className="inline-flex items-center space-x-2 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-5 py-2">
-              <Leaf size={16} className="text-emerald-400" />
-              <span className="text-emerald-400 text-sm font-semibold">Clean India Initiative</span>
-            </motion.div>
+            {/* Custom Input */}
+            <div className="space-y-1.5">
+              <label htmlFor="customAmount" className="block text-xs font-black text-neutral-500 uppercase tracking-widest">
+                Or Specify Custom Capital
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400 font-bold text-sm">
+                  ₹
+                </div>
+                <input
+                  id="customAmount"
+                  type="number"
+                  min="10"
+                  max="100000"
+                  value={customAmount}
+                  onChange={(e) => { setCustomAmount(e.target.value); setSelectedAmount(0); }}
+                  className="w-full pl-8 pr-4 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-850 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
+                  placeholder="Enter custom amount"
+                />
+              </div>
+            </div>
 
-            <motion.h1 custom={1} variants={fadeUp} className="text-4xl md:text-6xl font-black text-white leading-tight">
-              Every Rupee You Donate<br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-300">
-                Cleans a Street
-              </span>
-            </motion.h1>
+            {/* Impact Projection */}
+            <div className="p-4 bg-neutral-50 dark:bg-neutral-950 rounded-xl border border-neutral-100 dark:border-neutral-800 text-xs">
+              <p className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-1.5">Impact projection</p>
+              <p className="font-bold text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
+                <Leaf size={14} className="text-brand-500 shrink-0" />
+                {customAmount ? `Provides clean supplies and equipment based on ₹${customAmount}` : currentImpact}
+              </p>
+            </div>
 
-            <motion.p custom={2} variants={fadeUp} className="text-lg text-gray-300 max-w-2xl mx-auto leading-relaxed">
-              Your contribution directly funds cleanup drives, equipment for volunteers, and community programs that turn garbage spots into green spaces.
-            </motion.p>
+            {/* Submit Button */}
+            <Button
+              onClick={handlePayment}
+              disabled={loading}
+              className="w-full py-3 rounded-xl font-black text-xs bg-brand-500 text-white shadow-sm"
+              icon={<CreditCard size={14} />}
+            >
+              {loading ? 'Processing order...' : `Donate ${activeAmount >= 10 ? formatAmount(activeAmount) : ''}`}
+            </Button>
 
-            {/* Impact Stats */}
-            <motion.div custom={3} variants={fadeUp} className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto pt-4">
-              {impactPoints.map((point, i) => (
-                <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-4 text-center">
-                  <span className="text-2xl">{point.icon}</span>
-                  <p className="text-emerald-400 font-black text-xl mt-1">{point.stat}</p>
-                  <p className="text-gray-400 text-xs mt-0.5">{point.label}</p>
+            {/* Secure Badges */}
+            <div className="flex flex-wrap justify-center gap-6 pt-2 border-t border-neutral-100 dark:border-neutral-800 text-[10px] text-neutral-450 uppercase font-black tracking-wider">
+              {[
+                { icon: Shield, text: 'Secure Gateway' },
+                { icon: CheckCircle, text: '100% Tax Deductible' },
+                { icon: Heart, text: 'Direct Clean Allocations' }
+              ].map((badge, idx) => (
+                <div key={idx} className="flex items-center gap-1">
+                  <badge.icon size={12} className="text-brand-500" />
+                  <span>{badge.text}</span>
                 </div>
               ))}
-            </motion.div>
-          </motion.div>
+            </div>
+
+          </Card>
         </div>
 
-        {/* Wave */}
-        <svg viewBox="0 0 1440 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full">
-          <path d="M0 60L1440 60L1440 30C1200 0 960 60 720 30C480 0 240 60 0 30L0 60Z" fill="#f9fafb" />
-        </svg>
-      </div>
-
-      {/* ===== MAIN CONTENT ===== */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-
-          {/* ===== LEFT: DONATION FORM ===== */}
-          <div className="lg:col-span-2 space-y-6">
-            <motion.div initial="hidden" animate="show" custom={0} variants={fadeUp}
-              className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden"
-            >
-              {/* Card header */}
-              <div className="bg-gradient-to-r from-emerald-500 to-green-600 p-6 text-white">
-                <h2 className="text-2xl font-black flex items-center gap-3">
-                  <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                    <Heart size={20} className="fill-white text-white" />
-                  </div>
-                  Make a Donation
-                </h2>
-                <p className="text-emerald-100 text-sm mt-1">Choose an amount and support a cleaner India</p>
-              </div>
-
-              <div className="p-8 space-y-8">
-                {/* Preset amounts */}
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-4">Select Amount</label>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {presetAmounts.map((preset) => (
-                      <motion.button
-                        key={preset.value}
-                        whileHover={{ scale: 1.03, y: -2 }}
-                        whileTap={{ scale: 0.97 }}
-                        onClick={() => { setSelectedAmount(preset.value); setCustomAmount(''); }}
-                        className={`relative p-5 rounded-2xl border-2 text-center transition-all duration-200 cursor-pointer ${
-                          selectedAmount === preset.value && !customAmount
-                            ? 'border-emerald-500 bg-emerald-50 shadow-lg shadow-emerald-100'
-                            : 'border-gray-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/50'
-                        }`}
-                      >
-                        {selectedAmount === preset.value && !customAmount && (
-                          <div className="absolute top-2 right-2">
-                            <CheckCircle size={14} className="text-emerald-500" />
-                          </div>
-                        )}
-                        <span className="text-2xl mb-2 block">{preset.icon}</span>
-                        <span className={`text-lg font-black block ${selectedAmount === preset.value && !customAmount ? 'text-emerald-700' : 'text-gray-900'}`}>
-                          {preset.label}
-                        </span>
-                      </motion.button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Custom amount */}
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Or Enter Custom Amount</label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-lg">₹</span>
-                    <input
-                      type="number" min="10" max="100000"
-                      value={customAmount}
-                      onChange={(e) => { setCustomAmount(e.target.value); setSelectedAmount(''); }}
-                      className="w-full pl-10 pr-4 py-4 border-2 border-gray-200 rounded-2xl text-gray-900 text-lg font-bold focus:outline-none focus:border-emerald-500 focus:bg-emerald-50/30 transition-all placeholder-gray-300"
-                      placeholder="Enter amount..."
-                    />
-                  </div>
-                  <p className="text-xs text-gray-400 mt-1.5 ml-1">Minimum: ₹10 · Maximum: ₹1,00,000</p>
-                </div>
-
-                {/* Impact preview */}
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={selectedAmount}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.3 }}
-                    className="bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-100 rounded-2xl p-6"
-                  >
-                    <h3 className="font-bold text-emerald-800 flex items-center gap-2 mb-4">
-                      <Zap size={18} className="text-emerald-600" /> Your Impact
-                    </h3>
-                    <div className="space-y-2.5">
-                      {presetAmounts.map((p) => (
-                        <div key={p.value} className={`flex items-center gap-3 text-sm transition-all ${
-                          (customAmount ? parseInt(customAmount) >= p.value : selectedAmount >= p.value)
-                            ? 'text-emerald-700 font-semibold opacity-100'
-                            : 'text-gray-400 opacity-60'
-                        }`}>
-                          <CheckCircle size={15} className={
-                            (customAmount ? parseInt(customAmount) >= p.value : selectedAmount >= p.value)
-                              ? 'text-emerald-500' : 'text-gray-300'
-                          } />
-                          <span>{p.icon} {p.impact}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </motion.div>
-                </AnimatePresence>
-
-                {/* Donate button */}
-                <motion.button
-                  whileHover={{ scale: activeAmount >= 10 ? 1.02 : 1 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handlePayment}
-                  disabled={!activeAmount || activeAmount < 10 || loading}
-                  className="w-full relative overflow-hidden bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-5 rounded-2xl font-black text-xl shadow-xl shadow-emerald-500/30 hover:shadow-emerald-500/50 transition-all duration-300 flex items-center justify-center gap-3"
-                >
-                  {loading ? (
-                    <><div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div><span>Processing...</span></>
-                  ) : (
-                    <>
-                      <CreditCard size={22} />
-                      <span>Donate {activeAmount >= 10 ? formatAmount(activeAmount) : '—'}</span>
-                      <ArrowRight size={20} />
-                    </>
-                  )}
-                </motion.button>
-
-                {/* Trust row */}
-                <div className="flex flex-wrap items-center justify-center gap-6 pt-2">
-                  {[
-                    { icon: Shield, text: 'Secure Razorpay' },
-                    { icon: CheckCircle, text: '100% Transparent' },
-                    { icon: Heart, text: 'Goes to Cleanup' }
-                  ].map((t, i) => (
-                    <div key={i} className="flex items-center gap-1.5 text-gray-400 text-xs font-semibold">
-                      <t.icon size={14} className="text-emerald-500" /> {t.text}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          </div>
-
-          {/* ===== RIGHT SIDEBAR ===== */}
-          <div className="space-y-6">
-
-            {/* Your Contribution */}
-            <motion.div initial="hidden" animate="show" custom={1} variants={fadeUp}
-              className="bg-gradient-to-br from-emerald-500 to-green-700 rounded-3xl p-6 text-white shadow-xl shadow-emerald-500/20 relative overflow-hidden"
-            >
-              <div className="absolute top-0 right-0 p-4 opacity-10"><Heart size={100} className="fill-white text-white" /></div>
-              <h3 className="text-sm font-bold text-emerald-100 uppercase tracking-wider mb-5 flex items-center gap-2">
-                <Star size={14} /> Your Contribution
+        {/* Right Sidebar - Contribution metrics & History */}
+        <div className="space-y-6">
+          
+          {/* User Stats summary */}
+          <Card className="bg-brand-500 dark:bg-brand-950/20 text-white dark:text-brand-400 border border-brand-600 dark:border-brand-900/30 p-5 rounded-2xl shadow-sm relative overflow-hidden flex flex-col justify-between">
+            <div className="space-y-4">
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-white/80 dark:text-brand-400">
+                Your Contribution Overview
               </h3>
-              <div className="space-y-4 relative z-10">
-                <div className="bg-white/10 rounded-2xl p-4">
-                  <p className="text-emerald-200 text-xs font-semibold uppercase tracking-wide mb-1">Total Donated</p>
-                  <p className="text-3xl font-black text-white">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white/10 dark:bg-neutral-900/30 rounded-xl p-3.5 border border-white/5">
+                  <p className="text-[9px] font-black text-white/70 dark:text-brand-500 uppercase tracking-widest mb-1 leading-none">Total Contributed</p>
+                  <p className="text-xl font-black text-white dark:text-neutral-100">
                     {initialLoading ? '...' : formatAmount(stats.totalDonated)}
                   </p>
                 </div>
-                <div className="bg-white/10 rounded-2xl p-4">
-                  <p className="text-emerald-200 text-xs font-semibold uppercase tracking-wide mb-1">Number of Donations</p>
-                  <p className="text-3xl font-black text-white">
+                
+                <div className="bg-white/10 dark:bg-neutral-900/30 rounded-xl p-3.5 border border-white/5">
+                  <p className="text-[9px] font-black text-white/70 dark:text-brand-500 uppercase tracking-widest mb-1 leading-none">Transaction Count</p>
+                  <p className="text-xl font-black text-white dark:text-neutral-100">
                     {initialLoading ? '...' : stats.donationCount}
                   </p>
                 </div>
               </div>
-              {stats.donationCount > 0 && (
-                <div className="mt-4 relative z-10 flex items-center gap-2 bg-white/10 rounded-xl p-3">
-                  <span className="text-xl">🏅</span>
-                  <p className="text-sm font-semibold text-emerald-100">
-                    You're a valued contributor!
-                  </p>
+            </div>
+          </Card>
+
+          {/* Citizen history table */}
+          <Card className="border border-neutral-200/50 dark:border-neutral-800 bg-white dark:bg-neutral-900 rounded-2xl shadow-sm overflow-hidden p-0">
+            <div className="p-4 border-b border-neutral-100 dark:border-neutral-800">
+              <h3 className="text-[10px] font-black text-neutral-450 uppercase tracking-widest">
+                Supporters History Log
+              </h3>
+            </div>
+            
+            <div className="p-3">
+              {initialLoading ? (
+                <div className="space-y-2">
+                  {[1, 2].map(i => <div key={i} className="h-12 bg-neutral-50 dark:bg-neutral-950 rounded-xl animate-pulse" />)}
+                </div>
+              ) : donations.length === 0 ? (
+                <div className="text-center py-8 text-neutral-400 text-xs">
+                  <Gift size={20} className="mx-auto mb-2 opacity-50" />
+                  <span>No donations cataloged yet.</span>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                  {donations.map((d) => (
+                    <div key={d._id} className="flex items-center justify-between p-3 bg-neutral-50 dark:bg-neutral-950 rounded-xl border border-neutral-100 dark:border-neutral-850 hover:bg-brand-50/10 transition-colors">
+                      <div className="text-xs">
+                        <p className="font-bold text-neutral-800 dark:text-neutral-200">{formatAmount(d.amount)}</p>
+                        <p className="text-[10px] text-neutral-450 mt-0.5">{formatDate(d.createdAt)}</p>
+                      </div>
+                      <span className="px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-wider">
+                        Paid
+                      </span>
+                    </div>
+                  ))}
                 </div>
               )}
-            </motion.div>
+            </div>
+          </Card>
 
-            {/* Recent Donations */}
-            <motion.div initial="hidden" animate="show" custom={2} variants={fadeUp}
-              className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden"
-            >
-              <div className="p-6 border-b border-gray-50">
-                <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                  <div className="w-7 h-7 bg-emerald-50 rounded-lg flex items-center justify-center">
-                    <TrendingUp size={14} className="text-emerald-600" />
-                  </div>
-                  Donation History
-                </h3>
-              </div>
-
-              <div className="p-4">
-                {initialLoading ? (
-                  <div className="space-y-3">
-                    {[1, 2, 3].map(i => (
-                      <div key={i} className="h-14 bg-gray-100 rounded-xl animate-pulse"></div>
-                    ))}
-                  </div>
-                ) : donations.length === 0 ? (
-                  <div className="text-center py-10">
-                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <Gift size={28} className="text-gray-300" />
-                    </div>
-                    <p className="text-gray-500 text-sm font-medium">No donations yet</p>
-                    <p className="text-gray-400 text-xs mt-1">Make your first donation today!</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2 max-h-72 overflow-y-auto">
-                    {donations.map((donation) => (
-                      <motion.div
-                        key={donation._id}
-                        initial={{ opacity: 0, x: 10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="flex items-center justify-between bg-gray-50 hover:bg-emerald-50 transition-colors rounded-2xl px-4 py-3"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                            <Heart size={15} className="text-emerald-600" />
-                          </div>
-                          <div>
-                            <p className="font-black text-gray-900 text-sm">{formatAmount(donation.amount)}</p>
-                            <p className="text-gray-400 text-[11px]">{formatDate(donation.createdAt)}</p>
-                          </div>
-                        </div>
-                        <span className={`text-xs font-bold px-2.5 py-1 rounded-lg ${
-                          donation.status === 'success' || donation.status === 'paid'
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-yellow-100 text-yellow-700'
-                        }`}>
-                          {donation.status === 'success' || donation.status === 'paid' ? '✓ Paid' : 'Pending'}
-                        </span>
-                      </motion.div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </motion.div>
-
-            {/* Thank You card */}
-            <motion.div initial="hidden" animate="show" custom={3} variants={fadeUp}
-              className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-6 text-center relative overflow-hidden"
-            >
-              <div className="absolute inset-0 opacity-5"
-                style={{ backgroundImage: 'radial-gradient(circle, rgba(34,197,94,0.5) 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
-              </div>
-              <div className="relative z-10">
-                <div className="text-4xl mb-3">🌍</div>
-                <h3 className="font-black text-white text-lg mb-2">Together We Can!</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">
-                  Every single donation brings us closer to a cleaner, greener, and healthier India.
-                </p>
-                <div className="mt-4 flex items-center justify-center gap-2">
-                  {[...Array(5)].map((_, i) => <Star key={i} size={14} className="text-yellow-400 fill-yellow-400" />)}
-                </div>
-                <p className="text-gray-500 text-xs mt-2">Rated 5/5 by our community</p>
-              </div>
-            </motion.div>
-          </div>
         </div>
+
       </div>
+
     </div>
   );
 };

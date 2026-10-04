@@ -1,6 +1,7 @@
 import { validationResult } from 'express-validator';
 import Complaint from '../models/Complaint.js';
 import Assignment from '../models/Assignment.js';
+import { recordAuditLog } from '../utils/auditLogger.js';
 
 // @desc    Create new complaint
 // @route   POST /api/complaints
@@ -13,35 +14,26 @@ const createComplaint = async (req, res) => {
     }
 
     // ─── Image handling ────────────────────────────────────────────────────────
-    // multer-storage-cloudinary v4 sets these fields on req.file:
-    //   path     → Cloudinary secure_url  (the HTTPS image URL)
-    //   filename → Cloudinary public_id
-    //   size     → bytes
     let imageUrl = req.body.image || null;
     let imageData = req.body.imageData ? (typeof req.body.imageData === 'string' ? JSON.parse(req.body.imageData) : req.body.imageData) : {};
 
     if (req.file) {
-      console.log('[createComplaint] req.file keys:', Object.keys(req.file));
-      console.log('[createComplaint] req.file.path:', req.file.path);
-
-      imageUrl = req.file.path || null;  // path = secure_url from Cloudinary
-
+      imageUrl = req.file.path || null;
       imageData = {
-        publicId : req.file.filename || null,   // filename = public_id
-        url      : imageUrl,
-        bytes    : req.file.size    || null
+        publicId: req.file.filename || null,
+        url: imageUrl,
+        bytes: req.file.size || null
       };
     }
     // ───────────────────────────────────────────────────────────────────────────
 
     const { title, location, category, description } = req.body;
 
-    // Parse location — it may arrive as a JSON string from FormData
+    // Parse location
     let locationData;
     try {
       locationData = typeof location === 'string' ? JSON.parse(location) : location;
     } catch (e) {
-      console.error('Location parsing error:', e);
       return res.status(400).json({
         message: 'Invalid location format. Must be a valid JSON string.'
       });
@@ -53,14 +45,13 @@ const createComplaint = async (req, res) => {
 
     const { latitude, longitude, address } = locationData;
 
-    // ─── Persist complaint (image upload is independent) ──────────────────────
     const complaint = await Complaint.create({
       userId: req.user._id,
       title,
-      image: imageUrl,      // plain URL for quick display
-      imageData,            // full Cloudinary metadata
+      image: imageUrl,
+      imageData,
       location: {
-        latitude : latitude  && !isNaN(parseFloat(latitude))  ? parseFloat(latitude)  : null,
+        latitude: latitude && !isNaN(parseFloat(latitude)) ? parseFloat(latitude) : null,
         longitude: longitude && !isNaN(parseFloat(longitude)) ? parseFloat(longitude) : null,
         address
       },
@@ -70,16 +61,28 @@ const createComplaint = async (req, res) => {
 
     await complaint.populate('userId', 'name email');
 
-    console.log('[createComplaint] Saved complaint image URL:', complaint.image);
+    // Audit Log: CREATE Complaint
+    recordAuditLog({
+      req,
+      action: 'CREATE',
+      resource: 'Complaint',
+      resourceId: complaint._id,
+      target: { title: complaint.title, identifier: complaint._id.toString() },
+      description: `Citizen "${req.user.name}" filed complaint "${complaint.title}"`,
+      details: {
+        title: complaint.title,
+        category: complaint.category,
+        address: complaint.location?.address,
+        hasImage: !!complaint.image
+      }
+    });
 
     res.status(201).json(complaint);
   } catch (error) {
     console.error('[createComplaint] Error:', error.message);
-    console.error('[createComplaint] req.file:', req.file);
     res.status(500).json({
       message: 'Failed to create complaint',
-      error  : error.message,
-      stack  : process.env.NODE_ENV === 'development' ? error.stack : undefined
+      error: error.message
     });
   }
 };
@@ -91,7 +94,6 @@ const getComplaints = async (req, res) => {
   try {
     let query = {};
 
-    // Filter based on user role
     if (req.user.role === 'citizen') {
       query.userId = req.user._id;
     } else if (req.user.role === 'employee' || req.user.role === 'ngo') {
@@ -100,7 +102,6 @@ const getComplaints = async (req, res) => {
         { status: 'pending' }
       ];
     }
-    // Admin can see all complaints (no filter)
 
     const complaints = await Complaint.find(query)
       .populate('userId', 'name email')
@@ -126,7 +127,6 @@ const getComplaint = async (req, res) => {
       return res.status(404).json({ message: 'Complaint not found' });
     }
 
-    // Check permissions
     if (req.user.role === 'citizen' && complaint.userId._id.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Not authorized' });
     }
@@ -150,14 +150,14 @@ const updateComplaintStatus = async (req, res) => {
       return res.status(404).json({ message: 'Complaint not found' });
     }
 
+    const previousStatus = complaint.status;
     complaint.status = status;
     complaint.updatedAt = Date.now();
 
     if (status === 'completed' && req.file) {
-      // Cloudinary URL for proof image
       const proofUrl = req.file.path || req.file.secure_url;
-      complaint.proofImage = proofUrl; // Save to complaint as well for easy access
-      
+      complaint.proofImage = proofUrl;
+
       await Assignment.findOneAndUpdate(
         { complaintId: complaint._id, assigneeId: req.user._id },
         {
@@ -171,7 +171,62 @@ const updateComplaintStatus = async (req, res) => {
     await complaint.populate('userId', 'name email');
     await complaint.populate('assignedTo', 'name role');
 
+    // Audit Log: STATUS_CHANGE
+    recordAuditLog({
+      req,
+      action: 'STATUS_CHANGE',
+      resource: 'Complaint',
+      resourceId: complaint._id,
+      target: { title: complaint.title, identifier: complaint._id.toString() },
+      description: `${req.user.role.toUpperCase()} "${req.user.name}" shifted status of "${complaint.title}" from "${previousStatus}" to "${status}"`,
+      details: {
+        previousStatus,
+        newStatus: status,
+        hasProofImage: !!req.file
+      }
+    });
+
     res.json(complaint);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Delete complaint
+// @route   DELETE /api/complaints/:id
+// @access  Private (Admin or Citizen Owner)
+const deleteComplaint = async (req, res) => {
+  try {
+    const complaint = await Complaint.findById(req.params.id);
+
+    if (!complaint) {
+      return res.status(404).json({ message: 'Complaint not found' });
+    }
+
+    // Only admin or the author can delete
+    if (req.user.role !== 'admin' && complaint.userId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to delete this complaint' });
+    }
+
+    await Complaint.findByIdAndDelete(req.params.id);
+    await Assignment.deleteMany({ complaintId: req.params.id });
+
+    // Audit Log: DELETE Complaint
+    recordAuditLog({
+      req,
+      action: 'DELETE',
+      resource: 'Complaint',
+      resourceId: req.params.id,
+      target: { title: complaint.title, identifier: req.params.id },
+      description: `${req.user.role.toUpperCase()} "${req.user.name}" permanently deleted complaint "${complaint.title}"`,
+      details: {
+        title: complaint.title,
+        category: complaint.category,
+        location: complaint.location?.address
+      }
+    });
+
+    res.json({ success: true, message: 'Complaint deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -181,5 +236,6 @@ export {
   createComplaint,
   getComplaints,
   getComplaint,
-  updateComplaintStatus
+  updateComplaintStatus,
+  deleteComplaint
 };

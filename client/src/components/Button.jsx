@@ -20,14 +20,14 @@ const Button = forwardRef(({
   to,
   ...props
 }, ref) => {
-  const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2';
+  const baseClasses = 'inline-flex items-center justify-center font-bold rounded-xl transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 select-none';
 
   const variants = {
-    primary: 'bg-primary-600 hover:bg-primary-700 text-white focus:ring-primary-500',
-    secondary: 'bg-gray-600 hover:bg-gray-700 text-white focus:ring-gray-500',
-    outline: 'border-2 border-primary-600 text-primary-600 hover:bg-primary-600 hover:text-white focus:ring-primary-500',
-    ghost: 'text-primary-600 hover:bg-primary-50 focus:ring-primary-500',
-    danger: 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-500'
+    primary: 'bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white shadow-xs focus-visible:ring-brand-500/40 dark:focus-visible:ring-offset-neutral-900',
+    secondary: 'border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-700/80 text-neutral-700 dark:text-neutral-200 focus-visible:ring-neutral-400/40 dark:focus-visible:ring-offset-neutral-900 shadow-xs',
+    outline: 'border border-brand-500 text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-950/40 bg-transparent focus-visible:ring-brand-500/30 dark:focus-visible:ring-offset-neutral-900',
+    ghost: 'text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100 bg-transparent focus-visible:ring-neutral-300',
+    danger: 'bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white focus-visible:ring-rose-500/30 dark:focus-visible:ring-offset-neutral-900 shadow-xs'
   };
 
   const sizes = {

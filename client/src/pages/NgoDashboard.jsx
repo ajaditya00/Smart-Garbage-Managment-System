@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, Calendar, Hand, CheckCircle, Clock, Play, Upload, ShieldCheck, ClipboardList, Hash, TrendingUp } from 'lucide-react';
+import { MapPin, Calendar, Hand, CheckCircle, Clock, Play, Upload, ShieldCheck, ClipboardList, Hash, TrendingUp, Sparkles, Heart } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../utils/api';
-import AnimatedCard from '../components/AnimatedCard';
+import Button from '../components/Button';
+import Card from '../components/Card';
+import Modal from '../components/Modal';
+import StatusBadge from '../components/StatusBadge';
+import SkeletonLoader from '../components/SkeletonLoader';
+import EmptyState from '../components/EmptyState';
 import ImageUpload from '../components/ImageUpload';
 import StatsCounter from '../components/StatsCounter';
 
@@ -25,22 +30,9 @@ const NgoDashboard = () => {
   const [proofImageFile, setProofImageFile] = useState(null);
   const [updating, setUpdating] = useState(false);
 
-  const statusColors = {
-    pending: 'bg-yellow-100 text-yellow-800',
-    assigned: 'bg-blue-100 text-blue-800',
-    'in-progress': 'bg-orange-100 text-orange-800',
-    completed: 'bg-green-100 text-green-800',
-    verified: 'bg-purple-100 text-purple-800'
-  };
-
-  const statusOptions = [
-    { value: 'in-progress', label: 'Start Work (In Progress)', icon: Play },
-    { value: 'completed', label: 'Mark as Completed', icon: CheckCircle }
-  ];
-
   const tabs = [
-    { key: 'available', label: 'Available Tasks', count: stats.total },
-    { key: 'my-tasks', label: 'My Tasks', count: stats.assigned + stats.inProgress + stats.pendingVerification }
+    { key: 'available', label: 'Available Jobs Board', count: stats.total },
+    { key: 'my-tasks', label: 'My Volunteered Queue', count: stats.assigned + stats.inProgress + stats.pendingVerification }
   ];
 
   useEffect(() => {
@@ -109,7 +101,6 @@ const NgoDashboard = () => {
 
       toast.success('Task updated successfully!');
       setSelectedTask(null);
-      setActionType('');
       setNewStatus('');
       setProofImage(null);
       setProofImageFile(null);
@@ -130,379 +121,329 @@ const NgoDashboard = () => {
     return new Date(dateString).toLocaleDateString('en-IN', {
       day: 'numeric',
       month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      year: 'numeric'
     });
   };
 
-  const getNextStatus = (currentStatus) => {
-    if (currentStatus === 'assigned') return 'in-progress';
-    if (currentStatus === 'in-progress') return 'completed';
-    return null;
-  };
-
-  const canUpdateStatus = (task) => {
-    return task.status === 'assigned' || task.status === 'in-progress';
-  };
-
-  const renderTasks = (tasks, type) => {
-    if (loading) {
-      return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-white rounded-xl p-6 animate-pulse">
-              <div className="h-48 bg-gray-200 rounded-lg mb-4"></div>
-              <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-              <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-            </div>
-          ))}
-        </div>
-      );
-    }
-
-    if (tasks.length === 0) {
-      return (
-        <AnimatedCard>
-          <div className="p-8 text-center">
-            {type === 'available' ? (
-              <>
-                <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No available tasks</h3>
-                <p className="text-gray-600">There are no unassigned complaints available for volunteering</p>
-              </>
-            ) : (
-              <>
-                <Clock className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No assigned tasks</h3>
-                <p className="text-gray-600">You have not volunteered for any tasks yet</p>
-              </>
-            )}
-          </div>
-        </AnimatedCard>
-      );
-    }
-
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {tasks.map((task, index) => (
-          <AnimatedCard key={task._id} delay={index * 0.1}>
-            <div className="relative overflow-hidden">
-              <img
-                src={task.image}
-                alt={task.title}
-                className="w-full h-48 object-cover"
-              />
-              <div className="absolute top-4 right-4">
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[task.status]}`}>
-                  {task.status.replace('-', ' ').toUpperCase()}
-                </span>
-              </div>
-            </div>
-            <div className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                {task.title}
-              </h3>
-              <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                {task.description}
-              </p>
-              <div className="flex items-center text-gray-500 text-sm mb-2">
-                <MapPin size={16} className="mr-1" />
-                <span className="truncate">{task.location.address}</span>
-              </div>
-              <div className="flex items-center text-gray-500 text-sm mb-2">
-                <Calendar size={16} className="mr-1" />
-                <span>
-                  {type === 'available' 
-                    ? `Reported: ${formatDate(task.createdAt)}`
-                    : `Assigned: ${formatDate(task.assignedAt)}`
-                  }
-                </span>
-              </div>
-              <div className="text-sm text-gray-600 mb-4">
-                <strong>Reporter:</strong> {task.reportedBy?.name}
-              </div>
-              
-              {/* Completion Proof */}
-              {task.completionProof && (
-                <div className="mb-4">
-                  <p className="text-sm font-medium text-gray-700 mb-2">Completion Proof:</p>
-                  <img
-                    src={task.completionProof}
-                    alt="Completion proof"
-                    className="w-full h-32 object-cover rounded-lg"
-                  />
-                </div>
-              )}
-              
-              {type === 'available' && task.status === 'pending' && (
-                <button
-                  onClick={() => {
-                    setSelectedTask(task);
-                    setActionType('volunteer');
-                  }}
-                  className="w-full bg-primary-500 hover:bg-primary-600 text-white py-2 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
-                >
-                  <Hand size={16} />
-                  <span>Volunteer for This</span>
-                </button>
-              )}
-              
-              {type === 'my-tasks' && canUpdateStatus(task) && (
-                <button
-                  onClick={() => {
-                    setSelectedTask(task);
-                    setActionType('update');
-                    setNewStatus(getNextStatus(task.status));
-                  }}
-                  className="w-full bg-primary-500 hover:bg-primary-600 text-white py-2 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
-                >
-                  {task.status === 'assigned' ? (
-                    <>
-                      <Play size={16} />
-                      <span>Start Work</span>
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle size={16} />
-                      <span>Mark Completed</span>
-                    </>
-                  )}
-                </button>
-              )}
-            </div>
-          </AnimatedCard>
-        ))}
-      </div>
-    );
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <h1 className="text-3xl font-bold text-gray-900">NGO Dashboard</h1>
-          <p className="text-gray-600 mt-1">Volunteer for cleanup tasks and manage your assignments</p>
-        </motion.div>
+    <div className="space-y-6 text-left">
+      
+      {/* Page Header */}
+      <div>
+        <h1 className="text-2xl font-black tracking-tight text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+          <Sparkles className="text-brand-500" size={20} /> NGO Collaboration Space
+        </h1>
+        <p className="text-xs text-neutral-500">
+          Volunteer for public garbage cleanup drives, coordinate with municipal units, and submit completion reports.
+        </p>
+      </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      {/* KPI Stats widgets grid */}
+      <Card className="border border-neutral-200/50 dark:border-neutral-800 bg-white dark:bg-neutral-900/60 p-5 rounded-2xl shadow-sm">
+        <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest flex items-center gap-1.5 pb-3 border-b border-neutral-100 dark:border-neutral-800 mb-5">
+          <TrendingUp size={14} className="text-brand-500" /> Voluntary Action Metrics
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {[
-            { label: 'Total Tasks', value: stats.total, icon: ClipboardList, gradient: 'from-blue-500 to-indigo-700' },
-            { label: 'Assigned', value: stats.assigned, icon: Hash, gradient: 'from-yellow-400 to-orange-500' },
-            { label: 'In Progress', value: stats.inProgress, icon: TrendingUp, gradient: 'from-orange-500 to-red-600' },
-            { label: 'Pending Verification', value: stats.pendingVerification, icon: ShieldCheck, gradient: 'from-purple-500 to-fuchsia-700' }
-          ].map((stat, index) => {
+            { label: 'Available Jobs Board', value: stats.total, icon: ClipboardList, colors: 'bg-brand-50/50 text-brand-600 border border-brand-100 dark:bg-brand-950/10 dark:border-brand-900/30' },
+            { label: 'Volunteered Task Items', value: stats.assigned, icon: Clock, colors: 'bg-blue-50/50 text-blue-600 border border-blue-100 dark:bg-blue-950/10 dark:border-blue-900/30' },
+            { label: 'Cleanup In Progress', value: stats.inProgress, icon: Play, colors: 'bg-orange-50/50 text-orange-600 border border-orange-100 dark:bg-orange-950/10 dark:border-orange-900/30' },
+            { label: 'Pending Verification', value: stats.pendingVerification, icon: CheckCircle, colors: 'bg-emerald-50/50 text-emerald-600 border border-emerald-100 dark:bg-emerald-950/10 dark:border-emerald-900/30' }
+          ].map((stat, idx) => {
             const Icon = stat.icon;
             return (
-              <AnimatedCard key={index} delay={index * 0.1}>
-                <div className={`p-6 text-white rounded-xl bg-gradient-to-br ${stat.gradient} shadow-lg relative overflow-hidden h-full`}>
-                  <div className="absolute top-0 right-0 p-4 opacity-20 transform translate-x-2 -translate-y-2">
-                    <Icon size={80} />
-                  </div>
-                  <div className="relative z-10">
-                     <h3 className="text-sm font-medium text-white/90 flex items-center mb-2">
-                       <Icon className="mr-2" size={16} /> {stat.label}
-                     </h3>
-                     <div className="text-4xl font-bold mb-1">
-                       <StatsCounter end={stat.value} duration={1.5} color="text-white" />
-                     </div>
+              <div key={idx} className={`p-4 rounded-xl flex items-center justify-between ${stat.colors}`}>
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-widest opacity-80 mb-1">{stat.label}</p>
+                  <div className="text-xl font-black">
+                    <StatsCounter end={stat.value} duration={1} color="currentColor" />
                   </div>
                 </div>
-              </AnimatedCard>
+                <Icon size={18} className="opacity-75" />
+              </div>
             );
           })}
         </div>
+      </Card>
 
-        {/* Tabs */}
-        <div className="mb-6">
-          <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
-                    activeTab === tab.key
-                      ? 'border-primary-500 text-primary-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  <span>{tab.label}</span>
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    activeTab === tab.key
-                      ? 'bg-primary-100 text-primary-800'
-                      : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {tab.count}
-                  </span>
-                </button>
-              ))}
-            </nav>
-          </div>
+      {/* Tabs list trigger */}
+      <div className="space-y-5">
+        <div className="flex bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800 p-1.5 rounded-xl shadow-sm max-w-fit">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+                activeTab === tab.key 
+                  ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 shadow-sm' 
+                  : 'text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 hover:bg-neutral-100/70 dark:hover:bg-neutral-800/80'
+              }`}
+            >
+              {tab.label}
+              <span className={`px-1.5 py-0.5 rounded text-[10px] ${
+                activeTab === tab.key ? 'bg-brand-500 text-white' : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
+              }`}>{tab.count}</span>
+            </button>
+          ))}
         </div>
 
-        {/* Tasks Content */}
-        <div className="space-y-6">
-          {activeTab === 'available' ? (
-            <>
-              <h2 className="text-2xl font-bold text-gray-900">Available Tasks</h2>
-              {renderTasks(availableTasks, 'available')}
-            </>
+        {/* Task lists container mapping */}
+        <div>
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2].map((i) => (
+                <SkeletonLoader key={i} variant="card" />
+              ))}
+            </div>
+          ) : activeTab === 'available' ? (
+            availableTasks.length === 0 ? (
+              <EmptyState
+                icon={ClipboardList}
+                title="No tasks currently available"
+                description="There are currently no reported waste coordinates pending volunteer cleanups. New reports logged by citizens will display here."
+              />
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {availableTasks.map((task, index) => (
+                  <Card key={task._id} padding="p-0" className="border border-neutral-200/50 dark:border-neutral-800 bg-white dark:bg-neutral-900 rounded-2xl overflow-hidden shadow-sm flex flex-col justify-between" delay={index * 0.05}>
+                    <div className="relative">
+                      <img
+                        src={task.image}
+                        alt={task.title}
+                        className="w-full h-44 object-cover"
+                      />
+                      <div className="absolute top-3 right-3">
+                        <StatusBadge status={task.status} size="sm" />
+                      </div>
+                    </div>
+                    <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                      <div>
+                        <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 truncate">
+                          {task.title}
+                        </h3>
+                        <p className="text-neutral-500 text-[11px] mt-1.5 line-clamp-2 leading-relaxed">
+                          {task.description}
+                        </p>
+                      </div>
+
+                      <div className="space-y-2 pt-2 border-t border-neutral-100 dark:border-neutral-800 text-[11px] font-medium text-neutral-500">
+                        <div className="flex items-center space-x-2">
+                          <MapPin size={12} className="text-neutral-400 shrink-0" />
+                          <span className="truncate">{task.location.address}</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Calendar size={12} className="text-neutral-400 shrink-0" />
+                          <span>{formatDate(task.createdAt)}</span>
+                        </div>
+                      </div>
+
+                      <Button
+                        onClick={() => {
+                          setSelectedTask(task);
+                          setActionType('volunteer');
+                        }}
+                        variant="primary"
+                        className="w-full text-[11px] py-2 rounded-lg bg-brand-500 text-white font-bold"
+                        icon={<Hand size={12} />}
+                      >
+                        Accept Cleanup Job
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )
           ) : (
-            <>
-              <h2 className="text-2xl font-bold text-gray-900">My Tasks</h2>
-              {renderTasks(myTasks, 'my-tasks')}
-            </>
+            myTasks.length === 0 ? (
+              <EmptyState
+                icon={Heart}
+                title="Your active volunteered list is empty"
+                description="Accept cleanup tasks from the Available Jobs Board to start building a cleaner city drive."
+              />
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {myTasks.map((task, index) => (
+                  <Card key={task._id} padding="p-0" className="border border-neutral-200/50 dark:border-neutral-800 bg-white dark:bg-neutral-900 rounded-2xl overflow-hidden shadow-sm flex flex-col justify-between" delay={index * 0.05}>
+                    <div className="relative">
+                      <img
+                        src={task.image}
+                        alt={task.title}
+                        className="w-full h-44 object-cover"
+                      />
+                      <div className="absolute top-3 right-3">
+                        <StatusBadge status={task.status} size="sm" />
+                      </div>
+                    </div>
+                    <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                      <div>
+                        <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 truncate">
+                          {task.title}
+                        </h3>
+                        <p className="text-neutral-500 text-[11px] mt-1.5 line-clamp-2 leading-relaxed">
+                          {task.description}
+                        </p>
+                      </div>
+
+                      <div className="space-y-2 pt-2 border-t border-neutral-100 dark:border-neutral-800 text-[11px] font-medium text-neutral-500">
+                        <div className="flex items-center space-x-2">
+                          <MapPin size={12} className="text-neutral-400 shrink-0" />
+                          <span className="truncate">{task.location.address}</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Calendar size={12} className="text-neutral-400 shrink-0" />
+                          <span>{formatDate(task.createdAt)}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex space-x-2 pt-1">
+                        {task.status !== 'completed' && task.status !== 'verified' && (
+                          <Button
+                            onClick={() => {
+                              setSelectedTask(task);
+                              setActionType('update');
+                              setNewStatus(task.status === 'assigned' ? 'in-progress' : 'completed');
+                            }}
+                            variant="primary"
+                            className="w-full text-[11px] py-2 rounded-lg bg-brand-500 text-white font-bold"
+                            icon={task.status === 'assigned' ? <Play size={12} /> : <CheckCircle size={12} />}
+                          >
+                            {task.status === 'assigned' ? 'Start Cleanup' : 'Complete Clean Job'}
+                          </Button>
+                        )}
+                        {(task.status === 'completed' || task.status === 'verified') && (
+                          <div className="w-full text-center py-2 text-xs font-black text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg border border-emerald-100 dark:border-emerald-900/30 flex items-center justify-center gap-1">
+                            <CheckCircle size={14} /> CLEANUP SUBMITTED
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )
           )}
         </div>
       </div>
 
-      {/* Action Modal */}
-      <AnimatePresence>
-        {selectedTask && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+      {/* Volunteer Confirmation Modal */}
+      <Modal
+        isOpen={!!selectedTask && actionType === 'volunteer'}
+        onClose={() => {
+          setSelectedTask(null);
+          setActionType('');
+        }}
+        title="Volunteer for Task"
+        size="sm"
+      >
+        <div className="space-y-4 text-left">
+          <p className="text-xs text-neutral-500">
+            Are you sure you want to volunteer for: <span className="font-bold text-neutral-800 dark:text-neutral-200">{selectedTask?.title}</span>?
+          </p>
+          <p className="text-[10px] text-neutral-400 leading-normal">
+            By accepting, this task will move into your volunteering queue, and you will be responsible for submitting the clean photo proof once resolved.
+          </p>
+        </div>
+
+        <div className="flex space-x-4 pt-4 border-t border-neutral-100 dark:border-neutral-850 mt-5">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => {
+              setSelectedTask(null);
+              setActionType('');
+            }}
+            className="flex-1 rounded-xl text-xs py-2 bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
           >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            Cancel
+          </Button>
+          <Button
+            onClick={handleVolunteer}
+            loading={updating}
+            className="flex-1 rounded-xl text-xs py-2 bg-brand-500 text-white"
+          >
+            Accept Job
+          </Button>
+        </div>
+      </Modal>
+
+      {/* Status Update Modal */}
+      <Modal
+        isOpen={!!selectedTask && actionType === 'update'}
+        onClose={() => {
+          setSelectedTask(null);
+          setActionType('');
+          setNewStatus('');
+          setProofImage(null);
+          setProofImageFile(null);
+        }}
+        title="Update Voluntary Cleanup Progress"
+        size="md"
+      >
+        <div className="space-y-5 text-left">
+          <div className="p-4 bg-neutral-50 dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-xl">
+            <label className="block text-xs font-black text-neutral-400 uppercase tracking-widest mb-1">
+              Active Task details
+            </label>
+            <p className="text-xs font-bold text-neutral-800 dark:text-neutral-200 truncate">{selectedTask?.title}</p>
+            <p className="text-[11px] text-neutral-500 mt-1 leading-normal">{selectedTask?.description}</p>
+          </div>
+
+          <div>
+            <label htmlFor="modalStatus" className="block text-xs font-black text-neutral-500 uppercase tracking-widest mb-1.5">
+              Update Status Phase
+            </label>
+            <select
+              id="modalStatus"
+              value={newStatus}
+              onChange={(e) => setNewStatus(e.target.value)}
+              className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-850 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
             >
-              <div className="p-6">
-                <div className="mb-6">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                    {actionType === 'volunteer' ? 'Volunteer for Task' : 'Update Task Status'}
-                  </h3>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="font-medium text-gray-900 mb-1">{selectedTask.title}</h4>
-                    <p className="text-sm text-gray-600 mb-2">{selectedTask.description}</p>
-                    <p className="text-xs text-gray-500">
-                      <MapPin size={12} className="inline mr-1" />
-                      {selectedTask.location.address}
-                    </p>
-                  </div>
-                </div>
+              <option value="in-progress">In Progress</option>
+              <option value="completed">Completed (Proof Required)</option>
+            </select>
+          </div>
 
-                {actionType === 'volunteer' ? (
-                  <div className="text-center">
-                    <Hand className="w-16 h-16 text-primary-500 mx-auto mb-4" />
-                    <p className="text-gray-600 mb-6">
-                      Are you sure you want to volunteer for this cleanup task? 
-                      Once confirmed, this task will be assigned to your organization.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        New Status
-                      </label>
-                      <div className="space-y-2">
-                        {statusOptions
-                          .filter(option => {
-                            if (selectedTask.status === 'assigned') return option.value === 'in-progress';
-                            if (selectedTask.status === 'in-progress') return option.value === 'completed';
-                            return false;
-                          })
-                          .map((option) => {
-                            const Icon = option.icon;
-                            return (
-                              <label
-                                key={option.value}
-                                className={`flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 ${
-                                  newStatus === option.value 
-                                    ? 'border-primary-500 bg-primary-50' 
-                                    : 'border-gray-200'
-                                }`}
-                              >
-                                <input
-                                  type="radio"
-                                  name="status"
-                                  value={option.value}
-                                  checked={newStatus === option.value}
-                                  onChange={(e) => setNewStatus(e.target.value)}
-                                  className="text-primary-600 focus:ring-primary-500"
-                                />
-                                <Icon size={20} className="text-gray-600" />
-                                <span className="font-medium text-gray-900">{option.label}</span>
-                              </label>
-                            );
-                          })}
-                      </div>
-                    </div>
+          {newStatus === 'completed' && (
+            <div className="space-y-2">
+              <label className="block text-xs font-black text-neutral-500 uppercase tracking-widest">
+                Cleanup Proof Image Upload
+              </label>
+              <ImageUpload
+                onImageSelect={handleImageSelect}
+                selectedImage={proofImage}
+              />
+              <p className="text-[10px] text-neutral-400 italic">
+                * Upload clear photo evidence of the clean spot to submit to administrator for verification.
+              </p>
+            </div>
+          )}
+        </div>
 
-                    {newStatus === 'completed' && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Upload Completion Proof *
-                        </label>
-                        <ImageUpload
-                          onImageSelect={handleImageSelect}
-                          selectedImage={proofImage}
-                        />
-                        <p className="text-xs text-gray-500 mt-2">
-                          Please upload a photo showing the completed cleanup work
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
+        <div className="flex space-x-4 pt-4 border-t border-neutral-100 dark:border-neutral-850 mt-5">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => {
+              setSelectedTask(null);
+              setActionType('');
+              setNewStatus('');
+              setProofImage(null);
+              setProofImageFile(null);
+            }}
+            className="flex-1 rounded-xl text-xs py-2 bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleStatusUpdate}
+            loading={updating}
+            className="flex-1 rounded-xl text-xs py-2 bg-brand-500 text-white"
+          >
+            Update Assignment
+          </Button>
+        </div>
+      </Modal>
 
-                <div className="flex space-x-4 pt-6">
-                  <button
-                    onClick={() => {
-                      setSelectedTask(null);
-                      setActionType('');
-                      setNewStatus('');
-                      setProofImage(null);
-                      setProofImageFile(null);
-                    }}
-                    className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg font-medium transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={actionType === 'volunteer' ? handleVolunteer : handleStatusUpdate}
-                    disabled={updating}
-                    className="flex-1 bg-primary-500 hover:bg-primary-600 disabled:opacity-50 text-white py-2 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
-                  >
-                    {updating ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        <span>Processing...</span>
-                      </>
-                    ) : (
-                      <>
-                        {actionType === 'volunteer' ? (
-                          <>
-                            <Hand size={16} />
-                            <span>Confirm Volunteer</span>
-                          </>
-                        ) : (
-                          <>
-                            <Upload size={16} />
-                            <span>Update Status</span>
-                          </>
-                        )}
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };

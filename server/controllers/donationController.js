@@ -1,6 +1,7 @@
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import Donation from '../models/Donation.js';
+import { recordAuditLog } from '../utils/auditLogger.js';
 
 let razorpay = null;
 
@@ -81,6 +82,22 @@ const verifyPayment = async (req, res) => {
         { razorpayPaymentId: razorpay_payment_id, status: 'paid' },
         { new: true }
       ).populate('userId', 'name email');
+
+      // Audit Log: CREATE Donation
+      recordAuditLog({
+        req,
+        action: 'CREATE',
+        resource: 'Donation',
+        resourceId: donation._id,
+        target: { title: `Donation ₹${donation.amount}`, name: req.user.name, identifier: donation._id.toString() },
+        description: `Citizen "${req.user.name}" contributed donation of ₹${donation.amount}`,
+        details: {
+          amount: donation.amount,
+          razorpayPaymentId: razorpay_payment_id,
+          razorpayOrderId: razorpay_order_id,
+          status: 'paid'
+        }
+      });
 
       res.json({ message: 'Payment verified successfully', donation });
     } else {

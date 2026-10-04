@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, X, MapPin, Camera, Calendar, Eye, AlertTriangle, Clock, CheckCircle, Star, MessageSquare } from 'lucide-react';
+import { Plus, X, MapPin, Camera, Calendar, Eye, AlertTriangle, Clock, CheckCircle, Star, MessageSquare, ChevronUp, ChevronDown, TrendingUp, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../utils/api';
-import StatsCounter from '../components/StatsCounter';
-import AnimatedCard from '../components/AnimatedCard';
+import Button from '../components/Button';
+import Card from '../components/Card';
+import Modal from '../components/Modal';
+import StatusBadge from '../components/StatusBadge';
+import SkeletonLoader from '../components/SkeletonLoader';
 import ImageUpload from '../components/ImageUpload';
+import StatsCounter from '../components/StatsCounter';
+import EmptyState from '../components/EmptyState';
 
 const CitizenDashboard = () => {
   const [stats, setStats] = useState({
@@ -38,6 +42,24 @@ const CitizenDashboard = () => {
     comment: ''
   });
 
+  const [widgets, setWidgets] = useState({
+    stats: true,
+    complaints: true
+  });
+
+  useEffect(() => {
+    const saved = localStorage.getItem('swachhai_citizen_widgets');
+    if (saved) {
+      setWidgets(JSON.parse(saved));
+    }
+  }, []);
+
+  const toggleWidget = (name) => {
+    const updated = { ...widgets, [name]: !widgets[name] };
+    setWidgets(updated);
+    localStorage.setItem('swachhai_citizen_widgets', JSON.stringify(updated));
+  };
+
   const categories = [
     'garbage',
     'sewage',
@@ -46,14 +68,6 @@ const CitizenDashboard = () => {
     'water',
     'other'
   ];
-
-  const statusColors = {
-    pending: 'bg-yellow-100 text-yellow-800',
-    assigned: 'bg-blue-100 text-blue-800',
-    'in-progress': 'bg-orange-100 text-orange-800',
-    completed: 'bg-green-100 text-green-800',
-    verified: 'bg-purple-100 text-purple-800'
-  };
 
   useEffect(() => {
     fetchComplaintsAndStats();
@@ -93,20 +107,19 @@ const CitizenDashboard = () => {
         let fetchedAddress = formData.location.address;
         
         try {
-          // OpenStreetMap Reverse Geocoding
           const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
           if (!response.ok) throw new Error('Network response was not ok');
           const data = await response.json();
           
           if (data && data.display_name) {
             fetchedAddress = data.display_name;
-            toast.success('Location and address captured automatically!');
+            toast.success('Location & address detected successfully!');
           } else {
-            toast.success('Location captured. Could not auto-detect address.');
+            toast.success('Location captured. Enter address manually.');
           }
         } catch (error) {
           console.error('Reverse geocoding error:', error);
-          toast.success('Location coordinates captured. Please enter address manually.');
+          toast.success('Location captured. Enter address manually.');
         }
 
         setFormData(prev => ({
@@ -125,16 +138,16 @@ const CitizenDashboard = () => {
         setFetchingLocation(false);
         switch(error.code) {
           case error.PERMISSION_DENIED:
-            toast.error("Location permission denied. Please allow access or enter manually.");
+            toast.error("Location permission denied. Enter manually.");
             break;
           case error.POSITION_UNAVAILABLE:
-            toast.error("Location information is unavailable. Please enter manually.");
+            toast.error("Location unavailable. Enter manually.");
             break;
           case error.TIMEOUT:
-            toast.error("Location request timed out. Please enter manually.");
+            toast.error("Location request timed out. Enter manually.");
             break;
           default:
-            toast.error("An unknown error occurred while fetching location.");
+            toast.error("Error fetching location.");
             break;
         }
       },
@@ -242,10 +255,10 @@ const CitizenDashboard = () => {
         {[1, 2, 3, 4, 5].map((star) => (
           <Star
             key={star}
-            size={24}
+            size={22}
             className={`${
-              star <= rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'
-            } ${interactive ? 'cursor-pointer transform hover:scale-110 transition-transform' : ''}`}
+              star <= rating ? 'text-yellow-400 fill-yellow-400' : 'text-neutral-300 dark:text-neutral-700'
+            } ${interactive ? 'cursor-pointer transform hover:scale-110 transition-all' : ''}`}
             onClick={() => interactive && setRating(star)}
           />
         ))}
@@ -254,375 +267,384 @@ const CitizenDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+    <div className="space-y-8 text-left">
+      
+      {/* Header Panel */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-black tracking-tight text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+            <Sparkles className="text-brand-500" size={20} /> Citizen Workspace
+          </h1>
+          <p className="text-xs text-neutral-500">
+            Log new spots, monitor assignees, and ratify cleanups in your sector.
+          </p>
+        </div>
+        <Button
+          onClick={() => setShowModal(true)}
+          variant="primary"
+          className="px-5 py-2.5 rounded-xl text-xs font-black shadow-sm"
+          icon={<Plus size={16} />}
         >
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Citizen Dashboard</h1>
-              <p className="text-gray-600 mt-1">Report and track garbage complaints</p>
-            </div>
-            <button
-              onClick={() => setShowModal(true)}
-              className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-3 rounded-lg font-medium flex items-center space-x-2 transition-colors"
-            >
-              <Plus size={20} />
-              <span>Report Garbage</span>
-            </button>
-          </div>
-        </motion.div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {[
-            { label: 'Total Complaints', value: stats.total, icon: AlertTriangle, gradient: 'from-blue-500 to-cyan-600' },
-            { label: 'Pending', value: stats.pending, icon: Clock, gradient: 'from-yellow-400 to-orange-500' },
-            { label: 'Resolved', value: stats.resolved, icon: CheckCircle, gradient: 'from-green-500 to-emerald-600' }
-          ].map((stat, index) => {
-            const Icon = stat.icon;
-            return (
-              <AnimatedCard key={index} delay={index * 0.1}>
-                <div className={`p-6 text-white rounded-xl bg-gradient-to-br ${stat.gradient} shadow-lg relative overflow-hidden h-full`}>
-                  <div className="absolute top-0 right-0 p-4 opacity-20 transform translate-x-2 -translate-y-2">
-                    <Icon size={80} />
-                  </div>
-                  <div className="relative z-10">
-                     <h3 className="text-sm font-medium text-white/90 flex items-center mb-2">
-                       <Icon className="mr-2" size={16} /> {stat.label}
-                     </h3>
-                     <div className="text-4xl font-bold mb-1">
-                       <StatsCounter end={stat.value} duration={1.5} color="text-white" />
-                     </div>
-                  </div>
-                </div>
-              </AnimatedCard>
-            );
-          })}
-        </div>
-
-        {/* Complaints List */}
-        <div className="space-y-6">
-          <h2 className="text-2xl font-bold text-gray-900">My Complaints</h2>
-
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-white rounded-xl p-6 animate-pulse">
-                  <div className="h-48 bg-gray-200 rounded-lg mb-4"></div>
-                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                </div>
-              ))}
-            </div>
-          ) : complaints.length === 0 ? (
-            <AnimatedCard>
-              <div className="p-8 text-center">
-                <Camera className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No complaints yet</h3>
-                <p className="text-gray-600">Start by reporting your first garbage complaint</p>
-              </div>
-            </AnimatedCard>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {complaints.map((complaint, index) => (
-                <AnimatedCard key={complaint._id} delay={index * 0.1}>
-                  <div className="relative overflow-hidden">
-                    <img
-                      src={complaint.image}
-                      alt={complaint.title}
-                      className="w-full h-48 object-cover"
-                    />
-                    <div className="absolute top-4 right-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[complaint.status]}`}>
-                        {complaint.status.replace('-', ' ').toUpperCase()}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                      {complaint.title}
-                    </h3>
-                    <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                      {complaint.description}
-                    </p>
-                    <div className="flex items-center text-gray-500 text-sm mb-2">
-                      <MapPin size={16} className="mr-1" />
-                      <span className="truncate">{complaint.location.address}</span>
-                    </div>
-                    <div className="flex items-center text-gray-500 text-sm mb-4">
-                      <Calendar size={16} className="mr-1" />
-                      <span>{formatDate(complaint.createdAt)}</span>
-                    </div>
-                    <div className="flex space-x-2">
-                      <Link
-                        to={`/complaints/${complaint._id}`}
-                        className="flex-1 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 py-2 px-4 rounded-lg font-medium flex items-center justify-center space-x-2 transition-colors"
-                      >
-                        <Eye size={16} />
-                        <span>Details</span>
-                      </Link>
-                      {(complaint.status === 'completed' || complaint.status === 'verified') && (
-                        <button
-                          onClick={() => {
-                            setSelectedComplaint(complaint);
-                            setShowFeedbackModal(true);
-                          }}
-                          className="flex-1 bg-primary-500 hover:bg-primary-600 text-white py-2 px-4 rounded-lg font-medium flex items-center justify-center space-x-2 transition-colors"
-                        >
-                          <MessageSquare size={16} />
-                          <span>Feedback</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </AnimatedCard>
-              ))}
-            </div>
-          )}
-        </div>
+          Report Garbage Spot
+        </Button>
       </div>
 
-      {/* Report Modal */}
-      <AnimatePresence>
-        {showModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+      {/* Widget Grid */}
+      <div className="space-y-6">
+        
+        {/* Statistics Widgets */}
+        <Card className="border border-neutral-200/50 dark:border-neutral-800 bg-white dark:bg-neutral-900/60 p-5 rounded-2xl shadow-sm">
+          <div className="flex items-center justify-between pb-3 border-b border-neutral-100 dark:border-neutral-800 mb-5">
+            <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest flex items-center gap-1.5">
+              <TrendingUp size={14} className="text-brand-500" /> Track Activity Trends
+            </h3>
+            <button
+              onClick={() => toggleWidget('stats')}
+              className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 p-1 hover:bg-neutral-100/70 dark:hover:bg-neutral-800/80 rounded-lg transition-colors"
+              aria-label="Toggle Stats Widget"
             >
-              <div className="p-6">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-2xl font-bold text-gray-900">Report Garbage Issue</h3>
-                  <button
-                    onClick={() => setShowModal(false)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <X size={24} />
-                  </button>
-                </div>
+              {widgets.stats ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </button>
+          </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Title
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.title}
-                      onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                      className="input-field"
-                      placeholder="Brief description of the issue"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Category
-                    </label>
-                    <select
-                      value={formData.category}
-                      onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                      className="input-field"
-                    >
-                      {categories.map(cat => (
-                        <option key={cat} value={cat}>
-                          {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Image Evidence
-                    </label>
-                    <ImageUpload
-                      onImageSelect={handleImageSelect}
-                      selectedImage={formData.image}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Location
-                    </label>
-                    <div className="space-y-3">
-                      <input
-                        type="text"
-                        required
-                        value={formData.location.address}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          location: { ...prev.location, address: e.target.value }
-                        }))}
-                        className="input-field"
-                        placeholder="Enter address"
-                      />
-                      <div className="grid grid-cols-2 gap-3">
-                        <input
-                          type="number"
-                          step="any"
-                          value={formData.location.latitude}
-                          onChange={(e) => setFormData(prev => ({
-                            ...prev,
-                            location: { ...prev.location, latitude: e.target.value }
-                          }))}
-                          className="input-field"
-                          placeholder="Latitude (optional)"
-                        />
-                        <input
-                          type="number"
-                          step="any"
-                          value={formData.location.longitude}
-                          onChange={(e) => setFormData(prev => ({
-                            ...prev,
-                            location: { ...prev.location, longitude: e.target.value }
-                          }))}
-                          className="input-field"
-                          placeholder="Longitude (optional)"
-                        />
+          <AnimatePresence initial={false}>
+            {widgets.stats && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="grid grid-cols-1 md:grid-cols-3 gap-6 overflow-hidden"
+              >
+                {[
+                  { label: 'Total Logs Filed', value: stats.total, icon: AlertTriangle, colors: 'bg-brand-50/50 text-brand-600 border border-brand-100 dark:bg-brand-950/10 dark:border-brand-900/30' },
+                  { label: 'Pending Dispatch', value: stats.pending, icon: Clock, colors: 'bg-amber-50/50 text-amber-600 border border-amber-100 dark:bg-amber-950/10 dark:border-amber-900/30' },
+                  { label: 'Resolved Cleanups', value: stats.resolved, icon: CheckCircle, colors: 'bg-emerald-50/50 text-emerald-600 border border-emerald-100 dark:bg-emerald-950/10 dark:border-emerald-900/30' }
+                ].map((stat, idx) => {
+                  const Icon = stat.icon;
+                  return (
+                    <div key={idx} className={`p-5 rounded-2xl flex items-center justify-between ${stat.colors}`}>
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">{stat.label}</p>
+                        <div className="text-3xl font-black">
+                          <StatsCounter end={stat.value} duration={1} color="currentColor" />
+                        </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={getCurrentLocation}
-                        disabled={fetchingLocation}
-                        className={`text-sm font-medium flex items-center space-x-1 ${
-                          fetchingLocation ? 'text-gray-400 cursor-not-allowed' : 'text-primary-600 hover:text-primary-700'
-                        }`}
-                      >
-                        {fetchingLocation ? (
-                          <div className="w-4 h-4 border-2 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
-                        ) : (
-                          <MapPin size={16} />
-                        )}
-                        <span>{fetchingLocation ? 'Detecting Location & Address...' : 'Use Current Location'}</span>
-                      </button>
+                      <Icon size={28} className="opacity-70" />
                     </div>
-                  </div>
+                  );
+                })}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </Card>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Description
-                    </label>
-                    <textarea
-                      required
-                      rows={4}
-                      value={formData.description}
-                      onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                      className="input-field"
-                      placeholder="Detailed description of the issue"
-                    />
-                  </div>
-
-                  <div className="flex space-x-4 pt-4">
-                    <button
-                      type="button"
-                      onClick={() => setShowModal(false)}
-                      className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg font-medium transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={submitting}
-                      className={`flex-1 flex justify-center items-center py-2 px-4 rounded-lg font-medium transition-colors text-white ${submitting ? 'bg-primary-400 cursor-not-allowed' : 'bg-primary-500 hover:bg-primary-600'
-                        }`}
-                    >
-                      {submitting ? 'Submitting...' : 'Submit Report'}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Feedback Modal */}
-      <AnimatePresence>
-        {showFeedbackModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl"
+        {/* Complaints Ledger List */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between border-b border-neutral-200/50 dark:border-neutral-800 pb-2">
+            <h2 className="text-sm font-black text-neutral-800 dark:text-neutral-200 uppercase tracking-widest">
+              My Incidents Record
+            </h2>
+            <button
+              onClick={() => toggleWidget('complaints')}
+              className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 p-1 hover:bg-neutral-100/70 dark:hover:bg-neutral-800/80 rounded-lg transition-colors"
+              aria-label="Toggle Complaints List"
             >
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold text-gray-900">Provide Feedback</h3>
-                <button
-                  onClick={() => setShowFeedbackModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X size={24} />
-                </button>
-              </div>
+              {widgets.complaints ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </button>
+          </div>
 
-              <div className="mb-6">
-                <p className="text-sm text-gray-600 mb-4">
-                  How would you rate the work done for: <span className="font-semibold">{selectedComplaint?.title}</span>?
-                </p>
-                <div className="flex justify-center mb-6">
-                  <StarRating
-                    rating={feedbackData.rating}
-                    setRating={(rating) => setFeedbackData(prev => ({ ...prev, rating }))}
+          <AnimatePresence initial={false}>
+            {widgets.complaints && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                {loading ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[1, 2, 3].map((i) => (
+                      <SkeletonLoader key={i} variant="card" />
+                    ))}
+                  </div>
+                ) : complaints.length === 0 ? (
+                  <EmptyState
+                    icon={Camera}
+                    title="No reported logs recorded"
+                    description="Create a citizen record entry by uploading waste photo logs to begin."
+                    actionLabel="Report Garbage Spot"
+                    onAction={() => setShowModal(true)}
+                    actionIcon={<Plus size={14} />}
                   />
-                </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {complaints.map((complaint, index) => (
+                      <Card key={complaint._id} padding="p-0" className="border border-neutral-200/50 dark:border-neutral-800 bg-white dark:bg-neutral-900 rounded-2xl overflow-hidden shadow-sm flex flex-col justify-between" delay={index * 0.05}>
+                        <div className="relative">
+                          <img
+                            src={complaint.image}
+                            alt={complaint.title}
+                            className="w-full h-44 object-cover"
+                          />
+                          <div className="absolute top-3 right-3">
+                            <StatusBadge status={complaint.status} size="sm" />
+                          </div>
+                        </div>
+                        <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                          <div>
+                            <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 truncate">
+                              {complaint.title}
+                            </h3>
+                            <p className="text-neutral-500 text-[11px] mt-1.5 line-clamp-2 leading-relaxed">
+                              {complaint.description}
+                            </p>
+                          </div>
+                          
+                          <div className="space-y-2 pt-2 border-t border-neutral-100 dark:border-neutral-800 text-[11px] font-medium text-neutral-500">
+                            <div className="flex items-center space-x-2">
+                              <MapPin size={12} className="text-neutral-400 shrink-0" />
+                              <span className="truncate">{complaint.location.address}</span>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Calendar size={12} className="text-neutral-400 shrink-0" />
+                              <span>{formatDate(complaint.createdAt)}</span>
+                            </div>
+                          </div>
 
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Share your experience
-                </label>
-                <textarea
-                  rows={4}
-                  value={feedbackData.comment}
-                  onChange={(e) => setFeedbackData(prev => ({ ...prev, comment: e.target.value }))}
-                  className="input-field"
-                  placeholder="What did you think of the cleanup? (Optional)"
+                          <div className="flex space-x-2 pt-1">
+                            <Button
+                              to={`/complaint/${complaint._id}`}
+                              variant="secondary"
+                              className="flex-1 text-[11px] py-2 rounded-lg bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300"
+                              icon={<Eye size={12} />}
+                            >
+                              Details
+                            </Button>
+                            {(complaint.status === 'completed' || complaint.status === 'verified') && (
+                              <Button
+                                onClick={() => {
+                                  setSelectedComplaint(complaint);
+                                  setShowFeedbackModal(true);
+                                }}
+                                variant="primary"
+                                className="flex-1 text-[11px] py-2 rounded-lg bg-brand-500 text-white"
+                                icon={<MessageSquare size={12} />}
+                              >
+                                Feedback
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+      </div>
+
+      {/* Report Modal Panel */}
+      <Modal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        title="Report Waste Location"
+        size="lg"
+      >
+        <form onSubmit={handleSubmit} className="space-y-5 text-left">
+          <div>
+            <label htmlFor="title" className="block text-xs font-black text-neutral-500 uppercase tracking-widest mb-1.5">
+              Incident Label
+            </label>
+            <input
+              id="title"
+              type="text"
+              required
+              value={formData.title}
+              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-850 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
+              placeholder="Brief description of the issue"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="category" className="block text-xs font-black text-neutral-500 uppercase tracking-widest mb-1.5">
+                Waste Category
+              </label>
+              <select
+                id="category"
+                value={formData.category}
+                onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-850 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
+              >
+                {categories.map(cat => (
+                  <option key={cat} value={cat}>
+                    {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-black text-neutral-500 uppercase tracking-widest mb-1.5">
+                Evidence Upload
+              </label>
+              <ImageUpload
+                onImageSelect={handleImageSelect}
+                selectedImage={formData.image}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="address" className="block text-xs font-black text-neutral-500 uppercase tracking-widest mb-1.5">
+              Location details
+            </label>
+            <div className="space-y-3">
+              <input
+                id="address"
+                type="text"
+                required
+                value={formData.location.address}
+                onChange={(e) => setFormData(prev => ({
+                  ...prev,
+                  location: { ...prev.location, address: e.target.value }
+                }))}
+                className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-850 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
+                placeholder="Enter address coordinates"
+              />
+              
+              <div className="grid grid-cols-2 gap-3">
+                <input
+                  aria-label="Latitude"
+                  type="number"
+                  step="any"
+                  value={formData.location.latitude}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    location: { ...prev.location, latitude: e.target.value }
+                  }))}
+                  className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-850 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
+                  placeholder="Latitude (optional)"
+                />
+                <input
+                  aria-label="Longitude"
+                  type="number"
+                  step="any"
+                  value={formData.location.longitude}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    location: { ...prev.location, longitude: e.target.value }
+                  }))}
+                  className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-850 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
+                  placeholder="Longitude (optional)"
                 />
               </div>
 
-              <div className="flex space-x-4">
-                <button
-                  type="button"
-                  onClick={() => setShowFeedbackModal(false)}
-                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl font-bold transition-all"
-                >
-                  Skip
-                </button>
-                <button
-                  onClick={handleFeedbackSubmit}
-                  disabled={submitting}
-                  className="flex-1 bg-primary-500 hover:bg-primary-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-primary-500/30 transition-all flex justify-center items-center"
-                >
-                  {submitting ? (
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  ) : (
-                    'Submit Review'
-                  )}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              <button
+                type="button"
+                onClick={getCurrentLocation}
+                disabled={fetchingLocation}
+                className={`text-xs font-bold flex items-center space-x-2 transition-colors py-1 cursor-pointer ${
+                  fetchingLocation ? 'text-neutral-400 cursor-not-allowed' : 'text-brand-600 hover:text-brand-700'
+                }`}
+              >
+                {fetchingLocation ? (
+                  <div className="w-3.5 h-3.5 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <MapPin size={14} />
+                )}
+                <span>{fetchingLocation ? 'Detecting Location Coordinates...' : 'Auto-Detect Location GPS'}</span>
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="description" className="block text-xs font-black text-neutral-500 uppercase tracking-widest mb-1.5">
+              Additional Details
+            </label>
+            <textarea
+              id="description"
+              required
+              rows={3}
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-850 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
+              placeholder="Provide directions or urgency details..."
+            />
+          </div>
+
+          <div className="flex space-x-4 pt-3 border-t border-neutral-100 dark:border-neutral-850">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setShowModal(false)}
+              className="flex-1 rounded-xl text-xs py-2 bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              loading={submitting}
+              className="flex-1 rounded-xl text-xs py-2 bg-brand-500 text-white"
+            >
+              Submit Spot Log
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Feedback Modal Panel */}
+      <Modal
+        isOpen={showFeedbackModal}
+        onClose={() => setShowFeedbackModal(false)}
+        title="Verify and Rate Cleanup"
+        size="md"
+      >
+        <div className="mb-5 text-left">
+          <p className="text-xs text-neutral-500 mb-3.5">
+            How would you rate the resolution quality for: <span className="font-bold text-neutral-850 dark:text-neutral-100">{selectedComplaint?.title}</span>?
+          </p>
+          <div className="flex justify-center mb-5 bg-neutral-50 dark:bg-neutral-900/50 py-3.5 rounded-xl border border-neutral-100 dark:border-neutral-850">
+            <StarRating
+              rating={feedbackData.rating}
+              setRating={(rating) => setFeedbackData(prev => ({ ...prev, rating }))}
+            />
+          </div>
+
+          <label htmlFor="comment" className="block text-xs font-black text-neutral-500 uppercase tracking-widest mb-1.5">
+            Experience Comments
+          </label>
+          <textarea
+            id="comment"
+            rows={3}
+            value={feedbackData.comment}
+            onChange={(e) => setFeedbackData(prev => ({ ...prev, comment: e.target.value }))}
+            className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-850 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
+            placeholder="Share feedback on cleanup quality..."
+          />
+        </div>
+
+        <div className="flex space-x-4 pt-3 border-t border-neutral-100 dark:border-neutral-850">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => setShowFeedbackModal(false)}
+            className="flex-1 rounded-xl text-xs py-2 bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
+          >
+            Skip Rating
+          </Button>
+          <Button
+            onClick={handleFeedbackSubmit}
+            loading={submitting}
+            className="flex-1 rounded-xl text-xs py-2 bg-brand-500 text-white"
+          >
+            Submit Review
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 };

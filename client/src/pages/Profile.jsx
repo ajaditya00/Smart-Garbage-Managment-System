@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { User, Mail, Phone, Calendar, Edit2, Save, X } from 'lucide-react';
+import { User, Mail, Phone, Calendar, Edit2, Save, X, Sparkles, Shield, Heart, HelpCircle, ArrowUpRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
-import AnimatedCard from '../components/AnimatedCard';
+import Card from '../components/Card';
+import Button from '../components/Button';
 
 const Profile = () => {
   const { user, fetchUser } = useAuth();
@@ -14,6 +16,7 @@ const Profile = () => {
     phone: ''
   });
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('general');
 
   useEffect(() => {
     if (user) {
@@ -26,20 +29,19 @@ const Profile = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.name.trim()) {
       toast.error('Name is required');
       return;
     }
 
     setLoading(true);
-    
+
     try {
       await api.put('/auth/profile', formData);
       toast.success('Profile updated successfully!');
       setEditing(false);
-      
-      // Refresh user data
+
       if (fetchUser) {
         await fetchUser();
       }
@@ -66,264 +68,266 @@ const Profile = () => {
     });
   };
 
-  const getRoleBadgeColor = (role) => {
-    const colors = {
-      citizen: 'bg-blue-100 text-blue-800',
-      admin: 'bg-red-100 text-red-800',
-      employee: 'bg-green-100 text-green-800',
-      ngo: 'bg-purple-100 text-purple-800'
-    };
-    return colors[role] || 'bg-gray-100 text-gray-800';
-  };
-
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading profile...</p>
-        </div>
+      <div className="py-12 text-center space-y-4">
+        <div className="w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+        <p className="text-neutral-500 text-xs">Loading profile parameters...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <h1 className="text-3xl font-bold text-gray-900">Profile</h1>
-          <p className="text-gray-600 mt-1">Manage your account information</p>
-        </motion.div>
+    <div className="space-y-6 text-left">
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Profile Card */}
-          <div className="lg:col-span-2">
-            <AnimatedCard>
-              <div className="p-8">
-                <div className="flex justify-between items-start mb-6">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center">
-                      <User className="w-8 h-8 text-primary-600" />
-                    </div>
-                    <div>
-                      <h2 className="text-2xl font-bold text-gray-900">{user.name}</h2>
-                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium mt-1 ${getRoleBadgeColor(user.role)}`}>
-                        {user.role?.toUpperCase()}
-                      </span>
-                    </div>
+      {/* Page Header */}
+      <div>
+        <h1 className="text-2xl font-black tracking-tight text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+          <Sparkles className="text-brand-500" size={20} /> Settings & Workspace
+        </h1>
+        <p className="text-xs text-neutral-500">
+          Manage your account profile parameters, directory verification states, and configurations.
+        </p>
+      </div>
+
+      {/* Tabs triggers */}
+      <div className="flex bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800 p-1.5 rounded-xl shadow-sm max-w-fit">
+        {[
+          { key: 'general', label: 'General Account' },
+          { key: 'security', label: 'Security & Access' }
+        ].map(t => (
+          <button
+            key={t.key}
+            onClick={() => setActiveTab(t.key)}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-colors duration-150 cursor-pointer ${activeTab === t.key
+                ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 shadow-xs'
+                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100/70 dark:hover:bg-neutral-800/80'
+              }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        {/* Left Column - Main Tab Content */}
+        <div className="lg:col-span-2 space-y-6">
+          {activeTab === 'general' ? (
+            <Card className="border border-neutral-200/50 dark:border-neutral-800 bg-white dark:bg-neutral-900 rounded-2xl shadow-sm p-6">
+              <div className="flex justify-between items-start mb-6 pb-4 border-b border-neutral-100 dark:border-neutral-800">
+                <div className="flex items-center space-x-4">
+                  <div className="w-14 h-14 bg-brand-50 dark:bg-brand-950 rounded-full flex items-center justify-center font-bold text-brand-700 border border-brand-200/40 text-lg shrink-0">
+                    {user.name?.charAt(0) || 'U'}
                   </div>
-                  
-                  {!editing && (
-                    <button
-                      onClick={() => setEditing(true)}
-                      className="bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2"
-                    >
-                      <Edit2 size={16} />
-                      <span>Edit Profile</span>
-                    </button>
-                  )}
+                  <div>
+                    <h2 className="text-base font-black text-neutral-800 dark:text-neutral-200">{user.name}</h2>
+                    <span className="inline-block px-2.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-brand-500 text-white mt-1.5">
+                      {user.role}
+                    </span>
+                  </div>
                 </div>
 
-                {editing ? (
-                  <form onSubmit={handleSubmit} className="space-y-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Full Name *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={formData.name}
-                        onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                        className="input-field"
-                        placeholder="Enter your full name"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Phone Number
-                      </label>
-                      <input
-                        type="tel"
-                        value={formData.phone}
-                        onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                        className="input-field"
-                        placeholder="Enter your phone number"
-                      />
-                    </div>
-
-                    <div className="flex space-x-4">
-                      <button
-                        type="submit"
-                        disabled={loading}
-                        className="bg-primary-500 hover:bg-primary-600 disabled:opacity-50 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2"
-                      >
-                        {loading ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            <span>Saving...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Save size={16} />
-                            <span>Save Changes</span>
-                          </>
-                        )}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleCancel}
-                        className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2"
-                      >
-                        <X size={16} />
-                        <span>Cancel</span>
-                      </button>
-                    </div>
-                  </form>
-                ) : (
-                  <div className="space-y-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Full Name
-                      </label>
-                      <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                        <User className="text-gray-400" size={20} />
-                        <span className="text-gray-900">{user.name}</span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Email Address
-                      </label>
-                      <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                        <Mail className="text-gray-400" size={20} />
-                        <span className="text-gray-900">{user.email}</span>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Email cannot be changed. Contact support if needed.
-                      </p>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Phone Number
-                      </label>
-                      <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                        <Phone className="text-gray-400" size={20} />
-                        <span className="text-gray-900">
-                          {user.phone || 'Not provided'}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Account Type
-                      </label>
-                      <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                        <div className="w-5 h-5 bg-primary-500 rounded-full"></div>
-                        <span className="text-gray-900 capitalize">{user.role}</span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Member Since
-                      </label>
-                      <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                        <Calendar className="text-gray-400" size={20} />
-                        <span className="text-gray-900">
-                          {formatDate(user.createdAt)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+                {!editing && (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => setEditing(true)}
+                    className="px-4 py-2 rounded-xl text-xs font-bold text-white shadow-xs focus-visible:ring-2 focus-visible:ring-brand-500/40"
+                    icon={<Edit2 size={13} className="text-white shrink-0" />}
+                  >
+                    Edit Profile
+                  </Button>
                 )}
               </div>
-            </AnimatedCard>
-          </div>
 
-          {/* Account Statistics */}
-          <div className="space-y-6">
-            <AnimatedCard delay={0.2}>
-              <div className="p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Account Status</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Account Status</span>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      Active
-                    </span>
+              {editing ? (
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div>
+                    <label htmlFor="name" className="block text-xs font-black text-neutral-500 uppercase tracking-widest mb-1.5">
+                      Full Name *
+                    </label>
+                    <input
+                      id="name"
+                      type="text"
+                      required
+                      value={formData.name}
+                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                      className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-850 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
+                      placeholder="Enter your full name"
+                    />
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Email Verified</span>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      Verified
-                    </span>
+
+                  <div>
+                    <label htmlFor="phone" className="block text-xs font-black text-neutral-500 uppercase tracking-widest mb-1.5">
+                      Phone Number
+                    </label>
+                    <input
+                      id="phone"
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                      className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-850 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
+                      placeholder="Enter your phone number"
+                    />
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Last Login</span>
-                    <span className="text-sm text-gray-900">
-                      {formatDate(user.updatedAt)}
-                    </span>
+
+                  <div className="flex space-x-4 pt-3 border-t border-neutral-100 dark:border-neutral-800">
+                    <Button
+                      type="submit"
+                      disabled={loading}
+                      className="rounded-xl text-xs py-2 bg-brand-500 text-white font-bold px-4"
+                      icon={<Save size={13} />}
+                    >
+                      {loading ? 'Saving...' : 'Save Changes'}
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={handleCancel}
+                      className="rounded-xl text-xs py-2 bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 px-4"
+                      icon={<X size={13} />}
+                    >
+                      Cancel
+                    </Button>
                   </div>
+                </form>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-xs font-medium">
+                  <div>
+                    <label className="block text-[10px] font-black text-neutral-450 uppercase tracking-widest mb-1">
+                      Full Name
+                    </label>
+                    <div className="p-3 bg-neutral-50 dark:bg-neutral-950 border border-neutral-100 dark:border-neutral-850 rounded-xl text-neutral-800 dark:text-neutral-200">
+                      {user.name}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-neutral-450 uppercase tracking-widest mb-1">
+                      Email Address
+                    </label>
+                    <div className="p-3 bg-neutral-50 dark:bg-neutral-950 border border-neutral-100 dark:border-neutral-850 rounded-xl text-neutral-400 dark:text-neutral-500">
+                      {user.email}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-neutral-450 uppercase tracking-widest mb-1">
+                      Phone Number
+                    </label>
+                    <div className="p-3 bg-neutral-50 dark:bg-neutral-950 border border-neutral-100 dark:border-neutral-850 rounded-xl text-neutral-800 dark:text-neutral-200">
+                      {user.phone || 'Not provided'}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-neutral-450 uppercase tracking-widest mb-1">
+                      Member Registry
+                    </label>
+                    <div className="p-3 bg-neutral-50 dark:bg-neutral-950 border border-neutral-100 dark:border-neutral-850 rounded-xl text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
+                      <Calendar size={13} className="text-neutral-400" />
+                      <span>Registered on {formatDate(user.createdAt)}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </Card>
+          ) : (
+            <Card className="border border-neutral-200/50 dark:border-neutral-800 bg-white dark:bg-neutral-900 rounded-2xl shadow-sm p-6 space-y-5">
+              <h3 className="text-sm font-black text-neutral-800 dark:text-neutral-200 uppercase tracking-widest">
+                Verification Credentials
+              </h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-150 dark:border-neutral-800 rounded-xl">
+                  <div className="text-xs">
+                    <p className="font-bold text-neutral-800 dark:text-neutral-200">System Directory Status</p>
+                    <p className="text-[10px] text-neutral-450 mt-0.5">Assigned roles parameters and credentials.</p>
+                  </div>
+                  <span className="px-2.5 py-0.5 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 rounded text-[10px] font-black uppercase tracking-wider">
+                    Verified
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between p-3.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-150 dark:border-neutral-800 rounded-xl">
+                  <div className="text-xs">
+                    <p className="font-bold text-neutral-800 dark:text-neutral-200">Role Privilege Level</p>
+                    <p className="text-[10px] text-neutral-450 mt-0.5">Scope of dispatch approvals.</p>
+                  </div>
+                  <span className="px-2.5 py-0.5 bg-brand-500 text-white rounded text-[10px] font-black uppercase tracking-wider">
+                    {user.role}
+                  </span>
                 </div>
               </div>
-            </AnimatedCard>
-
-            {user.role === 'citizen' && (
-              <AnimatedCard delay={0.4}>
-                <div className="p-6">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">Quick Actions</h3>
-                  <div className="space-y-3">
-                    <a
-                      href="/dashboard"
-                      className="block w-full text-left p-3 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors"
-                    >
-                      <div className="font-medium text-primary-800">View Dashboard</div>
-                      <div className="text-sm text-primary-600">Manage your complaints</div>
-                    </a>
-                    <a
-                      href="/donate"
-                      className="block w-full text-left p-3 bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
-                    >
-                      <div className="font-medium text-green-800">Make a Donation</div>
-                      <div className="text-sm text-green-600">Support clean India</div>
-                    </a>
-                  </div>
-                </div>
-              </AnimatedCard>
-            )}
-
-            <AnimatedCard delay={0.6}>
-              <div className="p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Need Help?</h3>
-                <div className="text-sm text-gray-600 space-y-2">
-                  <p>
-                    If you have questions about your account or need assistance, 
-                    please contact our support team.
-                  </p>
-                  <div className="pt-3">
-                    <a
-                      href="mailto:support@swachh-ai.com"
-                      className="text-primary-600 hover:text-primary-700 font-medium"
-                    >
-                      support@swachh-ai.com
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </AnimatedCard>
-          </div>
+            </Card>
+          )}
         </div>
+
+        {/* Right Column - Status & Support Info */}
+        <div className="space-y-6">
+          <Card className="border border-neutral-200/50 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 rounded-2xl shadow-sm">
+            <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-4 pb-2 border-b border-neutral-100 dark:border-neutral-850">
+              Account Status
+            </h3>
+            <div className="space-y-3.5 text-xs font-semibold">
+              <div className="flex items-center justify-between">
+                <span className="text-neutral-500">Security Clearance</span>
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400">
+                  Active
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-neutral-500">Last Directory Sync</span>
+                <span className="text-neutral-800 dark:text-neutral-200 font-mono text-[10px]">
+                  {formatDate(user.updatedAt)}
+                </span>
+              </div>
+            </div>
+          </Card>
+
+          {user.role === 'citizen' && (
+            <Card className="border border-neutral-200/50 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 rounded-2xl shadow-sm">
+              <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-4 pb-2 border-b border-neutral-100 dark:border-neutral-850">
+                Workspace Shortcuts
+              </h3>
+              <div className="space-y-3">
+                <Link
+                  to="/dashboard"
+                  className="block w-full text-left p-3.5 bg-brand-50 hover:bg-brand-100/30 dark:bg-brand-950/10 dark:border dark:border-brand-900/30 rounded-xl transition-all"
+                >
+                  <div className="font-black text-brand-800 dark:text-brand-400 text-xs">View Incidents Board</div>
+                  <div className="text-[10px] text-neutral-400 mt-0.5">Manage your logged garbage files</div>
+                </Link>
+                <Link
+                  to="/donate"
+                  className="block w-full text-left p-3.5 bg-emerald-50 hover:bg-emerald-100/30 dark:bg-emerald-950/10 dark:border dark:border-emerald-900/30 rounded-xl transition-all"
+                >
+                  <div className="font-black text-emerald-800 dark:text-emerald-450 text-xs">Contribute Capital Support</div>
+                  <div className="text-[10px] text-neutral-400 mt-0.5">Donate funds to Swachh drives</div>
+                </Link>
+              </div>
+            </Card>
+          )}
+
+          <Card className="border border-neutral-200/50 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 rounded-2xl shadow-sm">
+            <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-4 pb-2 border-b border-neutral-100 dark:border-neutral-850">
+              Workspace Support
+            </h3>
+            <div className="text-xs text-neutral-500 leading-relaxed space-y-3">
+              <p>
+                Have questions about role settings, integrations, or coordinates auditing? Contact security desk:
+              </p>
+              <a
+                href="mailto:support@swachh-ai.com"
+                className="inline-flex items-center gap-1 font-bold text-brand-600 hover:text-brand-700"
+              >
+                support@swachh-ai.com <ArrowUpRight size={12} />
+              </a>
+            </div>
+          </Card>
+        </div>
+
       </div>
+
     </div>
   );
 };

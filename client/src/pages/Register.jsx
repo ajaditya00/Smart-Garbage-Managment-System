@@ -4,9 +4,11 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { Eye, EyeOff, UserPlus, User, Briefcase, Heart, Trash2, CheckCircle, ArrowRight, Phone, Mail, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Button from '../components/Button';
+import Card from '../components/Card';
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
+  hidden: { opacity: 0, y: 20 },
   show: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.5, delay: i * 0.08, ease: 'easeOut' } })
 };
 
@@ -14,32 +16,32 @@ const roles = [
   {
     value: 'citizen',
     label: 'Citizen',
-    description: 'Report garbage & track resolutions',
+    description: 'File reports & track',
     icon: User,
     gradient: 'from-blue-500 to-cyan-500',
-    bg: 'bg-blue-50',
-    border: 'border-blue-400',
-    activeBg: 'bg-blue-500'
+    bg: 'bg-blue-50 dark:bg-blue-950/20',
+    border: 'border-blue-200 dark:border-blue-900',
+    activeText: 'text-blue-600 dark:text-blue-400'
   },
   {
     value: 'employee',
-    label: 'Municipal Employee',
-    description: 'Manage & complete cleanup tasks',
+    label: 'Employee',
+    description: 'Dispatch & clean spots',
     icon: Briefcase,
     gradient: 'from-orange-500 to-amber-500',
-    bg: 'bg-orange-50',
-    border: 'border-orange-400',
-    activeBg: 'bg-orange-500'
+    bg: 'bg-orange-50 dark:bg-orange-950/20',
+    border: 'border-orange-200 dark:border-orange-900',
+    activeText: 'text-orange-600 dark:text-orange-400'
   },
   {
     value: 'ngo',
     label: 'NGO Partner',
-    description: 'Volunteer for community cleanup',
+    description: 'Volunteer clean drives',
     icon: Heart,
     gradient: 'from-purple-500 to-violet-500',
-    bg: 'bg-purple-50',
-    border: 'border-purple-400',
-    activeBg: 'bg-purple-500'
+    bg: 'bg-purple-50 dark:bg-purple-950/20',
+    border: 'border-purple-200 dark:border-purple-900',
+    activeText: 'text-purple-600 dark:text-purple-400'
   }
 ];
 
@@ -58,243 +60,329 @@ const Register = () => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (formData.password !== formData.confirmPassword) { toast.error('Passwords do not match'); return; }
-    if (formData.password.length < 6) { toast.error('Password must be at least 6 characters'); return; }
-    setLoading(true);
-    try {
-      const result = await register({ name: formData.name, email: formData.email, password: formData.password, role: formData.role, phone: formData.phone });
-      if (result.success) { toast.success('Welcome aboard! 🎉'); navigate('/dashboard'); }
-      else { toast.error(result.message); }
-    } catch { toast.error('Something went wrong'); }
-    finally { setLoading(false); }
+  const getPasswordStrength = (pass) => {
+    if (!pass) return { score: 0, label: 'None', color: 'bg-neutral-200' };
+    let score = 0;
+    if (pass.length >= 6) score += 1;
+    if (/[A-Z]/.test(pass)) score += 1;
+    if (/[0-9]/.test(pass)) score += 1;
+    if (/[^A-Za-z0-9]/.test(pass)) score += 1;
+
+    if (score <= 1) return { score, label: 'Weak', color: 'bg-red-500' };
+    if (score === 2) return { score, label: 'Medium', color: 'bg-amber-500' };
+    return { score, label: 'Strong', color: 'bg-emerald-500' };
   };
 
-  const selectedRole = roles.find(r => r.value === formData.role);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (formData.password !== formData.confirmPassword) { 
+      toast.error('Passwords do not match'); 
+      return; 
+    }
+    if (formData.password.length < 6) { 
+      toast.error('Password must be at least 6 characters'); 
+      return; 
+    }
+    setLoading(true);
+    try {
+      const result = await register({ 
+        name: formData.name, 
+        email: formData.email, 
+        password: formData.password, 
+        role: formData.role, 
+        phone: formData.phone 
+      });
+      if (result.success) { 
+        toast.success('Welcome aboard! 🎉'); 
+        navigate('/dashboard'); 
+      } else { 
+        toast.error(result.message); 
+      }
+    } catch { 
+      toast.error('Something went wrong'); 
+    } finally { 
+      setLoading(false); 
+    }
+  };
+
+  const passwordStrength = getPasswordStrength(formData.password);
 
   return (
-    <div className="min-h-screen flex">
-      {/* ===== LEFT PANEL ===== */}
-      <div className="hidden lg:flex lg:w-5/12 xl:w-1/2 bg-gradient-to-br from-gray-950 via-gray-900 to-emerald-950 relative overflow-hidden flex-col justify-between p-12">
-        {/* Grid bg */}
-        <div className="absolute inset-0 opacity-10"
-          style={{ backgroundImage: 'linear-gradient(rgba(34,197,94,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(34,197,94,0.3) 1px, transparent 1px)', backgroundSize: '50px 50px' }}>
-        </div>
-        <div className="absolute top-1/3 right-0 w-80 h-80 bg-emerald-500 rounded-full blur-[150px] opacity-20"></div>
-        <div className="absolute bottom-1/4 left-0 w-64 h-64 bg-green-400 rounded-full blur-[120px] opacity-10"></div>
+    <div className="min-h-screen flex bg-neutral-50 dark:bg-neutral-950 transition-colors duration-300">
+      
+      {/* ===== LEFT PANEL (Saas Branding & Benefits) ===== */}
+      <div className="hidden lg:flex lg:w-5/12 xl:w-1/2 bg-gradient-to-br from-neutral-950 via-neutral-900 to-emerald-950 relative overflow-hidden flex-col justify-between p-12">
+        {/* Grid visual background */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#262626_1px,transparent_1px),linear-gradient(to_bottom,#262626_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-30 pointer-events-none" />
+        <div className="absolute bottom-1/4 left-0 w-80 h-80 bg-emerald-500 rounded-full blur-[140px] opacity-10"></div>
 
-        {/* Logo */}
+        {/* Brand Logo */}
         <div className="relative z-10 flex items-center space-x-3">
-          <div className="w-11 h-11 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/30">
-            <Trash2 size={22} className="text-white" />
+          <div className="w-10 h-10 bg-brand-500 rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/20">
+            <Trash2 size={20} className="text-white" />
           </div>
           <div>
-            <p className="text-white font-black text-base leading-tight">Smart Garbage</p>
-            <p className="text-emerald-400 text-xs font-semibold tracking-wider">MANAGEMENT SYSTEM</p>
+            <p className="text-white font-black text-sm leading-tight tracking-tight">Swachh AI</p>
+            <p className="text-brand-400 text-[10px] font-black tracking-widest uppercase mt-0.5">SaaS workspace</p>
           </div>
         </div>
 
-        {/* Centered content */}
-        <div className="relative z-10 space-y-8">
+        {/* Content & benefits */}
+        <div className="relative z-10 space-y-10 my-auto max-w-md">
           <div className="space-y-4">
-            <span className="inline-flex items-center space-x-2 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-4 py-1.5">
-              <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
-              <span className="text-emerald-400 text-xs font-semibold">Join 500+ active members</span>
+            <span className="inline-flex items-center space-x-2 bg-brand-500/10 border border-brand-500/30 rounded-full px-4 py-1">
+              <span className="w-1.5 h-1.5 bg-brand-400 rounded-full animate-pulse" />
+              <span className="text-brand-400 text-[10px] uppercase font-bold tracking-wider">Join Cleaner Cities Mission</span>
             </span>
-            <h2 className="text-4xl xl:text-5xl font-black text-white leading-tight">
+            <h2 className="text-4xl xl:text-5xl font-black text-white leading-[1.1] tracking-tight">
               Be the change<br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-300">your city needs.</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-emerald-300">
+                your neighborhood needs.
+              </span>
             </h2>
-            <p className="text-gray-400 text-lg leading-relaxed max-w-sm">
-              Join thousands of citizens building cleaner, healthier communities across India.
+            <p className="text-neutral-400 text-xs sm:text-sm leading-relaxed">
+              Create an account and start managing municipal waste logs, mapping spots, or coordinating NGO volunteering drives.
             </p>
           </div>
 
-          {/* Benefits */}
+          {/* Staggered lists */}
           <div className="space-y-4">
             {[
-              'Report garbage issues in seconds',
-              'Track resolution progress live',
-              'Connect with municipal teams & NGOs',
-              'Build a cleaner community together'
-            ].map((b, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 + i * 0.1 }}
-                className="flex items-center space-x-3"
-              >
-                <div className="w-6 h-6 bg-emerald-500/20 border border-emerald-500/40 rounded-full flex items-center justify-center flex-shrink-0">
-                  <CheckCircle size={13} className="text-emerald-400" />
+              'Report local garbage spots in under 30 seconds',
+              'Track cleanup coordinates and progress in real-time',
+              'Collaborate directly with municipal officers & NGOs',
+              'Access auto-generated waste category AI analysis logs'
+            ].map((benefit, idx) => (
+              <div key={idx} className="flex items-center space-x-3 text-left">
+                <div className="w-5.5 h-5.5 rounded-full bg-brand-500/10 border border-brand-500/30 flex items-center justify-center shrink-0 text-brand-400">
+                  <CheckCircle size={12} />
                 </div>
-                <span className="text-gray-300 text-sm">{b}</span>
-              </motion.div>
+                <span className="text-xs text-neutral-300 leading-none">{benefit}</span>
+              </div>
             ))}
           </div>
         </div>
 
-        {/* Bottom badge */}
+        {/* Footer recognized block */}
         <div className="relative z-10">
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex items-center space-x-4">
-            <div className="text-3xl">🏆</div>
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center space-x-3.5 max-w-sm backdrop-blur-sm">
+            <div className="text-2xl select-none">🏆</div>
             <div>
-              <p className="text-white font-bold text-sm">Recognized Initiative</p>
-              <p className="text-gray-400 text-xs">Supporting Clean India Mission 2025</p>
+              <p className="text-white font-bold text-xs">Recognized Initiative</p>
+              <p className="text-neutral-400 text-[10px] tracking-wide mt-0.5">Supporting Swachh Bharat Mission operations</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ===== RIGHT PANEL (Form) ===== */}
-      <div className="flex-1 flex items-start justify-center bg-gray-50 overflow-y-auto py-10 px-4 sm:px-8 lg:px-12">
-        <motion.div
-          initial="hidden"
-          animate="show"
-          className="w-full max-w-lg space-y-7"
-        >
-          {/* Mobile logo */}
-          <div className="lg:hidden flex items-center space-x-3 mb-2">
-            <div className="w-9 h-9 bg-emerald-500 rounded-xl flex items-center justify-center">
-              <Trash2 size={18} className="text-white" />
-            </div>
-            <p className="text-gray-900 font-black text-sm">Smart Garbage Management System</p>
+      {/* ===== RIGHT PANEL (Forms) ===== */}
+      <div className="flex-1 flex items-center justify-center overflow-y-auto py-12 px-6 sm:px-12 lg:px-16">
+        <div className="w-full max-w-lg space-y-7 my-auto">
+          
+          {/* Header titles */}
+          <div className="space-y-2.5 text-left">
+            <h1 className="text-3xl font-black tracking-tight text-neutral-900 dark:text-neutral-100">
+              Create Account
+            </h1>
+            <p className="text-xs text-neutral-500">
+              Already have an account?{' '}
+              <Link to="/login" className="text-brand-600 font-bold hover:text-brand-700 transition-colors">
+                Sign In →
+              </Link>
+            </p>
           </div>
 
-          {/* Header */}
-          <motion.div custom={0} variants={fadeUp} className="space-y-1">
-            <h1 className="text-3xl font-black text-gray-900">Create your account</h1>
-            <p className="text-gray-500">Help make India cleaner — one report at a time.</p>
-          </motion.div>
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Role Selector */}
-            <motion.div custom={1} variants={fadeUp}>
-              <label className="block text-sm font-bold text-gray-700 mb-3">Choose your role</label>
+          {/* Form container */}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Roles selector radio buttons grid */}
+            <div>
+              <label className="block text-xs font-black text-neutral-500 uppercase tracking-widest mb-2.5">
+                Workspace Role Category
+              </label>
               <div className="grid grid-cols-3 gap-3">
                 {roles.map((role) => {
                   const Icon = role.icon;
                   const isSelected = formData.role === role.value;
                   return (
                     <label key={role.value} className="cursor-pointer">
-                      <input type="radio" name="role" value={role.value} checked={isSelected} onChange={handleChange} className="sr-only" />
-                      <div className={`relative p-4 rounded-2xl border-2 transition-all duration-300 text-center
-                        ${isSelected
-                          ? `border-transparent bg-gradient-to-br ${role.gradient} shadow-lg`
-                          : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
-                        }`}
-                      >
-                        <div className={`w-10 h-10 rounded-xl mx-auto mb-2 flex items-center justify-center
-                          ${isSelected ? 'bg-white/20' : role.bg}`}>
-                          <Icon size={20} className={isSelected ? 'text-white' : 'text-gray-500'} />
+                      <input 
+                        type="radio" 
+                        name="role" 
+                        value={role.value} 
+                        checked={isSelected} 
+                        onChange={handleChange} 
+                        className="sr-only" 
+                      />
+                      <div className={`p-4 rounded-2xl border-2 transition-all text-center h-full flex flex-col justify-between ${
+                        isSelected 
+                          ? 'border-brand-500 bg-brand-50/20 dark:bg-brand-950/10' 
+                          : 'border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:border-neutral-350 dark:hover:border-neutral-700'
+                      }`}>
+                        <div className={`w-9 h-9 rounded-lg mx-auto mb-2 flex items-center justify-center ${
+                          isSelected ? 'bg-brand-500 text-white' : role.bg + ' ' + role.activeText
+                        }`}>
+                          <Icon size={16} />
                         </div>
-                        <p className={`text-xs font-bold leading-tight ${isSelected ? 'text-white' : 'text-gray-700'}`}>{role.label}</p>
-                        <p className={`text-[10px] mt-1 leading-tight hidden sm:block ${isSelected ? 'text-white/80' : 'text-gray-400'}`}>{role.description}</p>
-                        {isSelected && (
-                          <div className="absolute top-2 right-2">
-                            <CheckCircle size={14} className="text-white" />
-                          </div>
-                        )}
+                        <p className={`text-xs font-bold ${isSelected ? 'text-brand-600 dark:text-brand-400' : 'text-neutral-700 dark:text-neutral-300'}`}>
+                          {role.label}
+                        </p>
+                        <p className="text-[9px] text-neutral-400 mt-1 leading-normal hidden sm:block">
+                          {role.description}
+                        </p>
                       </div>
                     </label>
                   );
                 })}
               </div>
-            </motion.div>
+            </div>
 
-            {/* Name + Phone */}
-            <motion.div custom={2} variants={fadeUp} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Grid Name / Phone */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="name" className="block text-sm font-bold text-gray-700 mb-1.5">Full Name</label>
+                <label htmlFor="name" className="block text-xs font-black text-neutral-500 uppercase tracking-widest mb-1.5">
+                  Full Name
+                </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                    <User size={16} className="text-gray-400" />
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-400">
+                    <User size={14} />
                   </div>
-                  <input id="name" name="name" type="text" required value={formData.name} onChange={handleChange}
-                    className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                    placeholder="Aditya Raj" />
+                  <input
+                    id="name"
+                    name="name"
+                    type="text"
+                    required
+                    value={formData.name}
+                    onChange={handleChange}
+                    className="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
+                    placeholder="Aditya Raj"
+                  />
                 </div>
               </div>
+
               <div>
-                <label htmlFor="phone" className="block text-sm font-bold text-gray-700 mb-1.5">Phone Number</label>
+                <label htmlFor="phone" className="block text-xs font-black text-neutral-500 uppercase tracking-widest mb-1.5">
+                  Phone Number
+                </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                    <Phone size={16} className="text-gray-400" />
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-400">
+                    <Phone size={14} />
                   </div>
-                  <input id="phone" name="phone" type="tel" required value={formData.phone} onChange={handleChange}
-                    className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                    placeholder="+91-9999999999" />
+                  <input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    required
+                    value={formData.phone}
+                    onChange={handleChange}
+                    className="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
+                    placeholder="+91-9999999999"
+                  />
                 </div>
               </div>
-            </motion.div>
+            </div>
 
-            {/* Email */}
-            <motion.div custom={3} variants={fadeUp}>
-              <label htmlFor="email" className="block text-sm font-bold text-gray-700 mb-1.5">Email Address</label>
+            {/* Email Address */}
+            <div>
+              <label htmlFor="email" className="block text-xs font-black text-neutral-500 uppercase tracking-widest mb-1.5">
+                Email Address
+              </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                  <Mail size={16} className="text-gray-400" />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-400">
+                  <Mail size={14} />
                 </div>
-                <input id="email" name="email" type="email" required value={formData.email} onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                  placeholder="you@example.com" />
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
+                  placeholder="you@swachh.ai"
+                />
               </div>
-            </motion.div>
+            </div>
 
-            {/* Passwords */}
-            <motion.div custom={4} variants={fadeUp} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Passwords grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="password" className="block text-sm font-bold text-gray-700 mb-1.5">Password</label>
+                <label htmlFor="password" className="block text-xs font-black text-neutral-500 uppercase tracking-widest mb-1.5">
+                  Password
+                </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                    <Lock size={16} className="text-gray-400" />
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-400">
+                    <Lock size={14} />
                   </div>
-                  <input id="password" name="password" type={showPassword ? 'text' : 'password'} required value={formData.password} onChange={handleChange}
-                    className="w-full pl-10 pr-10 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                    placeholder="Min. 6 characters" />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3.5 flex items-center">
-                    {showPassword ? <EyeOff size={16} className="text-gray-400 hover:text-gray-600" /> : <Eye size={16} className="text-gray-400 hover:text-gray-600" />}
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    value={formData.password}
+                    onChange={handleChange}
+                    className="w-full pl-9 pr-9 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
+                    placeholder="Min. 6 chars"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-neutral-400 hover:text-neutral-600"
+                  >
+                    {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                   </button>
                 </div>
-              </div>
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-bold text-gray-700 mb-1.5">Confirm Password</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                    <Lock size={16} className="text-gray-400" />
+                {/* Strength Meter Bar */}
+                {formData.password && (
+                  <div className="mt-1.5 space-y-1">
+                    <div className="flex justify-between items-center text-[10px] font-black text-neutral-400">
+                      <span>STRENGTH: {passwordStrength.label}</span>
+                    </div>
+                    <div className="w-full bg-neutral-200 dark:bg-neutral-800 h-1 rounded-full overflow-hidden">
+                      <div className={`h-full transition-all duration-300 ${passwordStrength.color}`} style={{ width: `${(passwordStrength.score / 4) * 100}%` }} />
+                    </div>
                   </div>
-                  <input id="confirmPassword" name="confirmPassword" type={showConfirmPassword ? 'text' : 'password'} required value={formData.confirmPassword} onChange={handleChange}
-                    className="w-full pl-10 pr-10 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                    placeholder="Repeat password" />
-                  <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute inset-y-0 right-0 pr-3.5 flex items-center">
-                    {showConfirmPassword ? <EyeOff size={16} className="text-gray-400 hover:text-gray-600" /> : <Eye size={16} className="text-gray-400 hover:text-gray-600" />}
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Submit */}
-            <motion.div custom={5} variants={fadeUp}>
-              <button
-                type="submit"
-                disabled={loading}
-                className="group w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white font-bold py-3.5 rounded-2xl text-base transition-all duration-300 shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:scale-[1.02] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
-              >
-                {loading ? (
-                  <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div><span>Creating Account...</span></>
-                ) : (
-                  <><UserPlus size={18} /><span>Create Account</span><ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" /></>
                 )}
-              </button>
-            </motion.div>
+              </div>
 
-            <motion.p custom={6} variants={fadeUp} className="text-center text-sm text-gray-500">
-              Already have an account?{' '}
-              <Link to="/login" className="text-emerald-600 font-bold hover:text-emerald-500 transition-colors">Sign In →</Link>
-            </motion.p>
+              <div>
+                <label htmlFor="confirmPassword" className="block text-xs font-black text-neutral-500 uppercase tracking-widest mb-1.5">
+                  Confirm Password
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-400">
+                    <Lock size={14} />
+                  </div>
+                  <input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    required
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    className="w-full pl-9 pr-9 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
+                    placeholder="Repeat password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-neutral-400 hover:text-neutral-600"
+                  >
+                    {showConfirmPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 rounded-xl font-black text-xs shadow-sm bg-brand-500 hover:bg-brand-600 text-white"
+            >
+              {loading ? 'Creating workspace profile...' : 'Join Workspace'}
+            </Button>
           </form>
-        </motion.div>
+
+        </div>
       </div>
     </div>
   );

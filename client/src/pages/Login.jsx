@@ -2,13 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import { Eye, EyeOff, LogIn, Trash2, CheckCircle, ArrowRight, Mail, Lock, Users, MapPin, BarChart3 } from 'lucide-react';
+import { Eye, EyeOff, LogIn, Trash2, CheckCircle, ArrowRight, Mail, Lock, Users, MapPin, BarChart3, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import axios from 'axios';
+import StatsCounter from '../components/StatsCounter';
+import Button from '../components/Button';
+import Card from '../components/Card';
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
-  show: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.5, delay: i * 0.1, ease: 'easeOut' } })
+  hidden: { opacity: 0, y: 20 },
+  show: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.5, delay: i * 0.08, ease: 'easeOut' } })
 };
 
 const Login = () => {
@@ -31,11 +34,11 @@ const Login = () => {
   }, []);
 
   const statusMap = {
-    pending: { label: 'Pending', color: 'text-yellow-400' },
-    assigned: { label: 'Assigned', color: 'text-blue-400' },
-    'in-progress': { label: 'In Progress', color: 'text-orange-400' },
-    completed: { label: 'Resolved', color: 'text-emerald-400' },
-    verified: { label: 'Verified', color: 'text-green-400' }
+    pending: { label: 'Pending', color: 'text-yellow-500 bg-yellow-50 dark:bg-yellow-950/20' },
+    assigned: { label: 'Assigned', color: 'text-blue-500 bg-blue-50 dark:bg-blue-950/20' },
+    'in-progress': { label: 'In Progress', color: 'text-orange-500 bg-orange-50 dark:bg-orange-950/20' },
+    completed: { label: 'Resolved', color: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-950/20' },
+    verified: { label: 'Verified', color: 'text-purple-500 bg-purple-50 dark:bg-purple-950/20' }
   };
 
   function timeAgo(d) {
@@ -58,10 +61,17 @@ const Login = () => {
     setLoading(true);
     try {
       const result = await login(formData.email, formData.password);
-      if (result.success) { toast.success('Welcome back! 👋'); navigate('/dashboard'); }
-      else { toast.error(result.message); }
-    } catch { toast.error('Something went wrong'); }
-    finally { setLoading(false); }
+      if (result.success) { 
+        toast.success('Welcome back! 👋'); 
+        navigate('/dashboard'); 
+      } else { 
+        toast.error(result.message); 
+      }
+    } catch { 
+      toast.error('Something went wrong'); 
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   const quickFill = (email, password) => {
@@ -69,195 +79,193 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* ===== LEFT PANEL ===== */}
-      <div className="hidden lg:flex lg:w-5/12 xl:w-1/2 bg-gradient-to-br from-gray-950 via-gray-900 to-emerald-950 relative overflow-hidden flex-col justify-between p-12">
-        {/* Grid bg */}
-        <div className="absolute inset-0 opacity-10"
-          style={{ backgroundImage: 'linear-gradient(rgba(34,197,94,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(34,197,94,0.3) 1px, transparent 1px)', backgroundSize: '50px 50px' }}>
-        </div>
-        <div className="absolute top-1/3 right-0 w-80 h-80 bg-emerald-500 rounded-full blur-[150px] opacity-20"></div>
-        <div className="absolute bottom-1/4 left-0 w-64 h-64 bg-green-400 rounded-full blur-[120px] opacity-10"></div>
-
-        {/* Logo */}
+    <div className="min-h-screen flex bg-neutral-50 dark:bg-neutral-950 transition-colors duration-300">
+      
+      {/* ===== LEFT PANEL (Saas Branding & Live Feed) ===== */}
+      <div className="hidden lg:flex lg:w-5/12 xl:w-1/2 bg-gradient-to-br from-neutral-950 via-neutral-900 to-emerald-950 relative overflow-hidden flex-col justify-between p-12">
+        {/* Subtle grid layer */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#262626_1px,transparent_1px),linear-gradient(to_bottom,#262626_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-30 pointer-events-none" />
+        <div className="absolute top-1/4 right-0 w-80 h-80 bg-brand-500 rounded-full blur-[140px] opacity-10"></div>
+        
+        {/* Brand Header */}
         <div className="relative z-10 flex items-center space-x-3">
-          <div className="w-11 h-11 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/30">
-            <Trash2 size={22} className="text-white" />
+          <div className="w-10 h-10 bg-brand-500 rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/20">
+            <Trash2 size={20} className="text-white" />
           </div>
           <div>
-            <p className="text-white font-black text-base leading-tight">Smart Garbage</p>
-            <p className="text-emerald-400 text-xs font-semibold tracking-wider">MANAGEMENT SYSTEM</p>
+            <p className="text-white font-black text-sm leading-tight tracking-tight">Swachh AI</p>
+            <p className="text-brand-400 text-[10px] font-black tracking-widest uppercase mt-0.5">SaaS workspace</p>
           </div>
         </div>
 
-        {/* Center content */}
-        <div className="relative z-10 space-y-10">
+        {/* Center narrative & stats */}
+        <div className="relative z-10 space-y-10 my-auto max-w-md">
           <div className="space-y-4">
-            <h2 className="text-4xl xl:text-5xl font-black text-white leading-tight">
-              Welcome back<br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-300">
-                to clean India. 🇮🇳
+            <h2 className="text-4xl xl:text-5xl font-black text-white leading-[1.1] tracking-tight">
+              Empowering communities via{' '}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-emerald-300">
+                AI verification.
               </span>
             </h2>
-            <p className="text-gray-400 text-lg leading-relaxed max-w-sm">
-              Your reports matter. Sign in and continue making a difference in your community.
+            <p className="text-neutral-400 text-xs sm:text-sm leading-relaxed">
+              Log in to access reports mapping, dispatch tools, and NGO coordination parameters.
             </p>
           </div>
 
-          {/* Stats */}
+          {/* Quick Metrics Grid */}
           <div className="grid grid-cols-3 gap-4">
             {[
-              { val: platformStats ? `${platformStats.resolutionRate}%` : '...', lab: 'Resolved', icon: CheckCircle, color: 'text-emerald-400' },
-              { val: platformStats ? platformStats.totalUsers.toLocaleString('en-IN') : '...', lab: 'Members', icon: Users, color: 'text-blue-400' },
-              { val: platformStats ? platformStats.totalComplaints.toLocaleString('en-IN') : '...', lab: 'Total', icon: BarChart3, color: 'text-yellow-400' }
+              { val: platformStats ? `${platformStats.resolutionRate}%` : '92%', lab: 'Resolved', icon: CheckCircle, color: 'text-emerald-400' },
+              { val: platformStats ? platformStats.totalUsers : 512, lab: 'Members', icon: Users, color: 'text-blue-400' },
+              { val: platformStats ? platformStats.totalComplaints : 196, lab: 'Complaints', icon: BarChart3, color: 'text-brand-400' }
             ].map((s, i) => (
-              <motion.div key={i} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.4 + i * 0.15 }}
-                className="bg-white/5 border border-white/10 rounded-2xl p-4 text-center"
-              >
-                <s.icon size={20} className={`${s.color} mx-auto mb-2`} />
-                <p className={`text-xl font-black ${s.color}`}>{s.val}</p>
-                <p className="text-gray-500 text-xs mt-0.5">{s.lab}</p>
-              </motion.div>
+              <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-4 text-center">
+                <s.icon size={18} className={`${s.color} mx-auto mb-2`} />
+                <p className="text-base sm:text-lg font-black text-white">{s.val}</p>
+                <p className="text-neutral-500 text-[10px] uppercase font-bold tracking-wider mt-1">{s.lab}</p>
+              </div>
             ))}
           </div>
 
-          {/* Real live activity */}
-          <div className="space-y-3">
-            <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider">Live Activity</p>
-            {liveActivity.length > 0 ? liveActivity.slice(0, 3).map((a, i) => {
-              const st = statusMap[a.status] || { label: a.status, color: 'text-gray-400' };
+          {/* Live Activity logs */}
+          <div className="space-y-3.5">
+            <p className="text-neutral-400 text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5">
+              <Clock size={12} /> Live Incident Feed
+            </p>
+            {liveActivity.length > 0 ? liveActivity.slice(0, 2).map((a, i) => {
+              const st = statusMap[a.status] || { label: a.status, color: 'text-neutral-400 bg-neutral-900' };
               return (
-                <motion.div key={i} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 + i * 0.15 }}
-                  className="flex items-center justify-between bg-white/5 rounded-xl px-4 py-3 border border-white/5"
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-7 h-7 rounded-lg bg-gray-700 flex items-center justify-center">
-                      <MapPin size={12} className="text-gray-400" />
+                <div key={i} className="flex items-center justify-between bg-white/5 rounded-xl px-4 py-3 border border-white/5 backdrop-blur-sm">
+                  <div className="flex items-center space-x-3 overflow-hidden">
+                    <div className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
+                      <MapPin size={12} className="text-neutral-400" />
                     </div>
-                    <div>
-                      <p className="text-white text-xs font-semibold truncate max-w-[130px]">{a.address}</p>
-                      <p className="text-gray-500 text-[11px]">{timeAgo(a.createdAt)}</p>
+                    <div className="text-left overflow-hidden">
+                      <p className="text-white text-xs font-bold truncate max-w-[150px]">{a.address || 'Report Local Spot'}</p>
+                      <p className="text-neutral-500 text-[10px] mt-0.5">{timeAgo(a.createdAt)}</p>
                     </div>
                   </div>
-                  <span className={`text-[11px] font-bold ${st.color}`}>{st.label}</span>
-                </motion.div>
+                  <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${st.color}`}>
+                    {st.label}
+                  </span>
+                </div>
               );
-            }) : [
-              { loc: 'Platform loading...', time: 'just now', st: 'Live', color: 'text-emerald-400' }
-            ].map((a, i) => (
-              <div key={i} className="h-12 bg-white/5 rounded-xl animate-pulse"></div>
-            ))}
+            }) : (
+              <div className="h-14 bg-white/5 rounded-xl animate-pulse"></div>
+            )}
           </div>
         </div>
 
-        <div className="relative z-10 text-center">
-          <p className="text-gray-600 text-xs">© 2025 SGMS · Building Cleaner Communities 🌿</p>
+        {/* Footer info */}
+        <div className="relative z-10">
+          <p className="text-neutral-600 text-[10px] uppercase font-bold tracking-widest">© Swachh AI operations platform</p>
         </div>
       </div>
 
-      {/* ===== RIGHT PANEL (Form) ===== */}
-      <div className="flex-1 flex items-center justify-center bg-gray-50 px-4 sm:px-8 lg:px-12">
-        <motion.div
-          initial="hidden"
-          animate="show"
-          className="w-full max-w-md space-y-8"
-        >
-          {/* Mobile logo */}
-          <div className="lg:hidden flex items-center space-x-3">
-            <div className="w-9 h-9 bg-emerald-500 rounded-xl flex items-center justify-center">
-              <Trash2 size={18} className="text-white" />
-            </div>
-            <p className="text-gray-900 font-black text-sm">Smart Garbage Management System</p>
+      {/* ===== RIGHT PANEL (Clean SaaS Form) ===== */}
+      <div className="flex-1 flex items-center justify-center px-6 sm:px-12 lg:px-16">
+        <div className="w-full max-w-sm space-y-8">
+          
+          {/* Header titles */}
+          <div className="space-y-2.5 text-left">
+            <h1 className="text-3xl font-black tracking-tight text-neutral-900 dark:text-neutral-100">
+              Sign In
+            </h1>
+            <p className="text-xs text-neutral-500">
+              Don't have an account?{' '}
+              <Link to="/register" className="text-brand-600 font-bold hover:text-brand-700 transition-colors">
+                Create free workspace
+              </Link>
+            </p>
           </div>
 
-          {/* Header */}
-          <motion.div custom={0} variants={fadeUp} className="space-y-2">
-            <h1 className="text-3xl font-black text-gray-900">Sign in to your account</h1>
-            <p className="text-gray-500">Don't have an account?{' '}
-              <Link to="/register" className="text-emerald-600 font-bold hover:text-emerald-500 transition-colors">Register →</Link>
-            </p>
-          </motion.div>
-
+          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Email */}
-            <motion.div custom={1} variants={fadeUp}>
-              <label htmlFor="email" className="block text-sm font-bold text-gray-700 mb-1.5">Email Address</label>
+            <div>
+              <label htmlFor="email" className="block text-xs font-black text-neutral-500 uppercase tracking-widest mb-1.5">
+                Email Address
+              </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                  <Mail size={16} className="text-gray-400" />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-400">
+                  <Mail size={16} />
                 </div>
                 <input
-                  id="email" name="email" type="email" required
-                  value={formData.email} onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all shadow-sm"
-                  placeholder="you@example.com"
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
+                  placeholder="you@swachh.ai"
                 />
               </div>
-            </motion.div>
-
-            {/* Password */}
-            <motion.div custom={2} variants={fadeUp}>
-              <label htmlFor="password" className="block text-sm font-bold text-gray-700 mb-1.5">Password</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                  <Lock size={16} className="text-gray-400" />
-                </div>
-                <input
-                  id="password" name="password" type={showPassword ? 'text' : 'password'} required
-                  value={formData.password} onChange={handleChange}
-                  className="w-full pl-10 pr-12 py-3.5 bg-white border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all shadow-sm"
-                  placeholder="Enter your password"
-                />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3.5 flex items-center">
-                  {showPassword ? <EyeOff size={16} className="text-gray-400 hover:text-gray-600" /> : <Eye size={16} className="text-gray-400 hover:text-gray-600" />}
-                </button>
-              </div>
-            </motion.div>
-
-            {/* Submit */}
-            <motion.div custom={3} variants={fadeUp}>
-              <button
-                type="submit"
-                disabled={loading}
-                className="group w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white font-bold py-3.5 rounded-2xl text-base transition-all duration-300 shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:scale-[1.02] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
-              >
-                {loading ? (
-                  <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div><span>Signing In...</span></>
-                ) : (
-                  <><LogIn size={18} /><span>Sign In</span><ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" /></>
-                )}
-              </button>
-            </motion.div>
-          </form>
-
-          {/* Demo Accounts */}
-          <motion.div custom={4} variants={fadeUp}>
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200"></div></div>
-              <div className="relative flex justify-center"><span className="bg-gray-50 px-4 text-xs text-gray-400 font-semibold uppercase tracking-wide">Demo Accounts</span></div>
             </div>
 
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              {[
-                { label: '👮 Admin', email: 'admin@swachhai.com', pass: 'admin123', color: 'border-red-200 hover:border-red-300 hover:bg-red-50' },
-                { label: '🧑‍🔧 Employee', email: 'employee@swachhai.com', pass: 'employee123', color: 'border-orange-200 hover:border-orange-300 hover:bg-orange-50' },
-                { label: '💚 NGO', email: 'ngo@swachhai.com', pass: 'ngo123', color: 'border-purple-200 hover:border-purple-300 hover:bg-purple-50' },
-                { label: '🏠 Citizen', email: 'citizen@swachhai.com', pass: 'citizen123', color: 'border-blue-200 hover:border-blue-300 hover:bg-blue-50' }
-              ].map((d, i) => (
+            <div>
+              <label htmlFor="password" className="block text-xs font-black text-neutral-500 uppercase tracking-widest mb-1.5">
+                Password Key
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-400">
+                  <Lock size={16} />
+                </div>
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="w-full pl-9 pr-10 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
+                  placeholder="••••••••"
+                />
                 <button
-                  key={i}
                   type="button"
-                  onClick={() => quickFill(d.email, d.pass)}
-                  className={`text-left p-3 bg-white border-2 rounded-xl transition-all duration-200 cursor-pointer ${d.color}`}
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
                 >
-                  <p className="text-xs font-bold text-gray-700">{d.label}</p>
-                  <p className="text-[10px] text-gray-400 mt-0.5 truncate">{d.email}</p>
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 rounded-xl font-black text-xs shadow-sm bg-brand-500 hover:bg-brand-600 text-white"
+            >
+              {loading ? 'Authenticating credentials...' : 'Enter Workspace'}
+            </Button>
+          </form>
+
+          {/* Quick Demo Cards */}
+          <div className="space-y-4 pt-4 border-t border-neutral-100 dark:border-neutral-800">
+            <p className="text-[10px] font-black text-neutral-400 uppercase tracking-widest text-center">
+              Quick Fill Demo Roles
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { label: '👮 Admin', email: 'admin@swachhai.com', pass: 'admin123', style: 'hover:border-red-200 dark:hover:border-red-950/20 hover:bg-red-50/20' },
+                { label: '🧑‍🔧 Employee', email: 'employee@swachhai.com', pass: 'employee123', style: 'hover:border-orange-200 dark:hover:border-orange-950/20 hover:bg-orange-50/20' },
+                { label: '💚 NGO Group', email: 'ngo@swachhai.com', pass: 'ngo123', style: 'hover:border-purple-200 dark:hover:border-purple-950/20 hover:bg-purple-50/20' },
+                { label: '🏠 Citizen', email: 'citizen@swachhai.com', pass: 'citizen123', style: 'hover:border-blue-200 dark:hover:border-blue-950/20 hover:bg-blue-50/20' }
+              ].map((demo, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => quickFill(demo.email, demo.pass)}
+                  className={`text-left p-3 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl transition-all cursor-pointer ${demo.style}`}
+                >
+                  <p className="text-xs font-bold text-neutral-800 dark:text-neutral-200">{demo.label}</p>
+                  <p className="text-[9px] text-neutral-400 mt-0.5 truncate leading-none">{demo.email}</p>
                 </button>
               ))}
             </div>
-            <p className="text-center text-xs text-gray-400 mt-3">Click any card to auto-fill credentials</p>
-          </motion.div>
-        </motion.div>
+            <p className="text-[10px] text-neutral-400 text-center italic">Click role cards to fill values automatically</p>
+          </div>
+
+        </div>
       </div>
     </div>
   );

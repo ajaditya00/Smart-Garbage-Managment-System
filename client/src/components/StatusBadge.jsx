@@ -6,23 +6,33 @@ const StatusBadge = ({ status, size = 'md' }) => {
   const statusConfig = {
     pending: {
       label: 'Pending',
-      className: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      className: 'bg-warning-light text-warning-text border-warning-border',
       icon: '⏳'
     },
     assigned: {
       label: 'Assigned',
-      className: 'bg-blue-100 text-blue-800 border-blue-200',
+      className: 'bg-blue-50 text-blue-800 border-blue-200',
       icon: '👤'
     },
     'in-progress': {
       label: 'In Progress',
-      className: 'bg-purple-100 text-purple-800 border-purple-200',
+      className: 'bg-orange-50 text-orange-800 border-orange-200',
       icon: '🔄'
     },
     completed: {
       label: 'Completed',
-      className: 'bg-green-100 text-green-800 border-green-200',
+      className: 'bg-green-50 text-green-800 border-green-200',
       icon: '✅'
+    },
+    verified: {
+      label: 'Verified',
+      className: 'bg-purple-50 text-purple-800 border-purple-200',
+      icon: '✨'
+    },
+    rejected: {
+      label: 'Rejected',
+      className: 'bg-danger-light text-danger-text border-danger-border',
+      icon: '❌'
     }
   };
 

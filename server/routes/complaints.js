@@ -4,7 +4,8 @@ import {
   createComplaint,
   getComplaints,
   getComplaint,
-  updateComplaintStatus
+  updateComplaintStatus,
+  deleteComplaint
 } from '../controllers/complaintController.js';
 import { protect, authorize } from '../middleware/auth.js';
 import { complaintUpload } from '../middleware/upload.js';
@@ -33,5 +34,6 @@ router.post('/', protect, authorize('citizen'), complaintUpload.single('image'),
 router.get('/', protect, getComplaints);
 router.get('/:id', protect, getComplaint);
 router.put('/:id/status', protect, authorize('employee', 'ngo'), complaintUpload.single('proofImage'), statusValidation, updateComplaintStatus);
+router.delete('/:id', protect, deleteComplaint);
 
 export default router;

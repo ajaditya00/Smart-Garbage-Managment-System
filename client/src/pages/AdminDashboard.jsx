@@ -1,10 +1,19 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, CheckCircle, Clock, AlertTriangle, X, UserCheck, Heart, FileText, Star, TrendingUp, DollarSign } from 'lucide-react';
+import { Users, CheckCircle, Clock, AlertTriangle, X, UserCheck, Heart, FileText, Star, TrendingUp, DollarSign, ChevronDown, ChevronUp, Eye, EyeOff, Sparkles, Filter, ShieldCheck, Mail, ArrowUpRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../utils/api';
+import Button from '../components/Button';
+import Card from '../components/Card';
+import Modal from '../components/Modal';
+import StatusBadge from '../components/StatusBadge';
+import SkeletonLoader from '../components/SkeletonLoader';
 import StatsCounter from '../components/StatsCounter';
-import AnimatedCard from '../components/AnimatedCard';
+import RecentActivityTimeline from '../components/RecentActivityTimeline';
+import EmptyState from '../components/EmptyState';
+import AnalyticsDashboard from '../components/AnalyticsDashboard';
+import AuditLogViewer from '../components/AuditLogViewer';
 
 const AdminDashboard = ({ activeTab = 'dashboard' }) => {
   const [stats, setStats] = useState({
@@ -32,18 +41,27 @@ const AdminDashboard = ({ activeTab = 'dashboard' }) => {
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [userFilter, setUserFilter] = useState('all');
   const [statsDataRaw, setStatsDataRaw] = useState(null);
+  const [widgets, setWidgets] = useState({
+    stats: true,
+    complaints: true,
+    activity: true
+  });
 
-  const statusColors = {
-    pending: 'bg-yellow-100 text-yellow-800',
-    assigned: 'bg-blue-100 text-blue-800',
-    'in-progress': 'bg-orange-100 text-orange-800',
-    completed: 'bg-green-100 text-green-800',
-    verified: 'bg-purple-100 text-purple-800',
-    rejected: 'bg-red-100 text-red-800'
+  useEffect(() => {
+    const saved = localStorage.getItem('swachhai_admin_widgets');
+    if (saved) {
+      setWidgets(JSON.parse(saved));
+    }
+  }, []);
+
+  const toggleWidget = (name) => {
+    const updated = { ...widgets, [name]: !widgets[name] };
+    setWidgets(updated);
+    localStorage.setItem('swachhai_admin_widgets', JSON.stringify(updated));
   };
 
   const filterOptions = [
-    { key: 'all', label: 'All Complaints' },
+    { key: 'all', label: 'All Reports' },
     { key: 'pending', label: 'Pending' },
     { key: 'assigned', label: 'Assigned' },
     { key: 'in-progress', label: 'In Progress' },
@@ -60,7 +78,6 @@ const AdminDashboard = ({ activeTab = 'dashboard' }) => {
     if (filter === 'all') {
       setFilteredComplaints(complaints);
     } else if (filter === 'completed') {
-      // Group completed and verified
       setFilteredComplaints(complaints.filter(complaint => complaint.status === 'completed' || complaint.status === 'verified'));
     } else {
       setFilteredComplaints(complaints.filter(complaint => complaint.status === filter));
@@ -150,7 +167,7 @@ const AdminDashboard = ({ activeTab = 'dashboard' }) => {
     if (!window.confirm('Are you sure you want to reject this work? It will be cleared for reassignment.')) return;
     try {
       await api.put(`/admin/reject/${id}`);
-      toast.success('Work rejected. Complaint is now available for reassignment.');
+      toast.success('Work rejected. Re-released to board.');
       fetchData();
     } catch (error) {
       toast.error('Failed to reject work');
@@ -169,372 +186,350 @@ const AdminDashboard = ({ activeTab = 'dashboard' }) => {
 
   const getAssigneeInfo = (complaint) => {
     if (!complaint.assignedTo) return null;
-    
+
     if (complaint.assignedTo.name) {
-       return `${complaint.assignedTo.name} (${complaint.assignedType || 'unknown'})`;
+      return `${complaint.assignedTo.name} (${complaint.assignedType || 'crew'})`;
     }
 
     const assigneeId = typeof complaint.assignedTo === 'object' ? complaint.assignedTo._id : complaint.assignedTo;
     const assigneeType = complaint.assignedType || complaint.assigneeType;
 
-    const assignee = assigneeType === 'employee' 
+    const assignee = assigneeType === 'employee'
       ? employees.find(emp => emp._id === assigneeId)
       : ngos.find(ngo => ngo._id === assigneeId);
 
-    return assignee ? `${assignee.name} (${assigneeType})` : 'Unknown';
+    return assignee ? `${assignee.name} (${assigneeType})` : 'Assigned';
   };
 
   const tabInfo = {
-    dashboard: { title: 'Admin Dashboard', desc: 'Manage complaints and assignments' },
-    complaints: { title: 'All Complaints', desc: 'View and manage all system complaints' },
-    users: { title: 'Manage Users', desc: 'View and manage all system users' },
-    donations: { title: 'User Donations', desc: 'View all citizen payments and donations' },
-    analytics: { title: 'Analytics', desc: 'Detailed system statistics and insights' }
+    dashboard: { title: 'Admin Overview', desc: 'Manage system complaints and resources' },
+    complaints: { title: 'Garbage Incident Ledger', desc: 'Audit and assign incoming tickets' },
+    users: { title: 'Workspace Directory', desc: 'View and audit registered system profiles' },
+    donations: { title: 'Financial Ledger', desc: 'Track citizen support donations' },
+    analytics: { title: 'Business Intelligence', desc: 'Visual analytics dashboard' },
+    'audit-logs': { title: 'System Security & Audit Trail', desc: 'Immutable timeline of all CRUD operations, data mutations, and access logs' }
   };
 
   const renderComplaintsTable = (data) => (
-    <AnimatedCard>
+    <Card padding="p-0" className="border border-neutral-200/50 dark:border-neutral-800/80 bg-white dark:bg-neutral-900 rounded-2xl overflow-hidden shadow-sm">
       <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-50">
+        <table className="w-full text-left">
+          <thead className="bg-neutral-50 dark:bg-neutral-900/50 border-b border-neutral-100 dark:border-neutral-800">
             <tr>
-               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Complaint</th>
-               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reporter</th>
-               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proof / Results</th>
-               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Citizen Feedback</th>
-               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              <th className="px-6 py-4 text-[10px] font-black text-neutral-400 uppercase tracking-widest">Incident Details</th>
+              <th className="px-6 py-4 text-[10px] font-black text-neutral-400 uppercase tracking-widest">Reporter</th>
+              <th className="px-6 py-4 text-[10px] font-black text-neutral-400 uppercase tracking-widest">Assignment Status</th>
+              <th className="px-6 py-4 text-[10px] font-black text-neutral-400 uppercase tracking-widest">Action Proof</th>
+              <th className="px-6 py-4 text-[10px] font-black text-neutral-400 uppercase tracking-widest">Citizen Review</th>
+              <th className="px-6 py-4 text-[10px] font-black text-neutral-400 uppercase tracking-widest">Created Date</th>
+              <th className="px-6 py-4 text-[10px] font-black text-neutral-400 uppercase tracking-widest text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800/50">
             {loading ? (
-              [...Array(5)].map((_, i) => (
+              [...Array(3)].map((_, i) => (
                 <tr key={i}>
-                  {[...Array(6)].map((_, j) => (
-                    <td key={j} className="px-6 py-4"><div className="h-4 bg-gray-200 rounded animate-pulse"></div></td>
-                  ))}
+                  <td colSpan={7} className="px-6 py-5">
+                    <div className="h-4 bg-neutral-100 dark:bg-neutral-800 shimmer rounded w-3/4"></div>
+                  </td>
                 </tr>
               ))
             ) : data.length === 0 ? (
-              <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500">No complaints found</td></tr>
+              <tr>
+                <td colSpan={7} className="px-6 py-12 text-center text-neutral-400 text-xs">
+                  No incident records found.
+                </td>
+              </tr>
             ) : (
               data.map((complaint) => (
-                <motion.tr key={complaint._id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="hover:bg-gray-50">
+                <tr key={complaint._id} className="hover:bg-neutral-50/40 dark:hover:bg-neutral-900/40 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-3">
-                      <img src={complaint.image} alt={complaint.title} className="w-12 h-12 rounded-lg object-cover" />
-                      <div>
-                        <div className="font-medium text-gray-900">{complaint.title}</div>
-                        <div className="text-sm text-gray-500">{complaint.category}</div>
+                      <img
+                        src={complaint.image}
+                        alt={complaint.title}
+                        className="w-10 h-10 rounded-lg object-cover border border-neutral-200/50 dark:border-neutral-800 shrink-0"
+                      />
+                      <div className="overflow-hidden">
+                        <Link to={`/complaint/${complaint._id}`} className="font-bold text-neutral-800 dark:text-neutral-200 hover:text-brand-600 transition-colors text-xs truncate block">
+                          {complaint.title}
+                        </Link>
+                        <span className="text-[10px] text-neutral-400 capitalize mt-0.5 block">{complaint.category}</span>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="font-medium text-gray-900">{complaint.userId?.name}</div>
-                    <div className="text-sm text-gray-500">{complaint.userId?.email}</div>
+                    <div className="text-xs font-bold text-neutral-700 dark:text-neutral-300">{complaint.userId?.name || 'Citizen'}</div>
+                    <div className="text-[10px] text-neutral-400 truncate max-w-[120px]">{complaint.userId?.email}</div>
                   </td>
-                   <td className="px-6 py-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[complaint.status]}`}>
-                      {complaint.status.replace('-', ' ').toUpperCase()}
+                  <td className="px-6 py-4">
+                    <StatusBadge status={complaint.status} size="sm" />
+                    <span className="text-[9px] text-neutral-400 font-bold uppercase tracking-wider block mt-1">
+                      {getAssigneeInfo(complaint) || 'Unassigned'}
                     </span>
-                    <div className="text-[10px] text-gray-400 mt-1">{getAssigneeInfo(complaint) || 'Unassigned'}</div>
                   </td>
                   <td className="px-6 py-4">
                     {complaint.proofImage ? (
-                      <div className="flex flex-col gap-1">
-                        <img 
-                          src={complaint.proofImage} 
-                          alt="Proof" 
-                          className="w-16 h-12 rounded border border-gray-200 object-cover cursor-pointer hover:scale-150 transition-transform" 
+                      <div className="flex items-center space-x-2">
+                        <img
+                          src={complaint.proofImage}
+                          alt="Cleanup Proof"
+                          className="w-8 h-8 rounded object-cover cursor-pointer hover:scale-105 transition-transform"
                           onClick={() => window.open(complaint.proofImage)}
                         />
-                        <span className="text-[10px] text-emerald-600 font-bold">Proof Uploaded</span>
+                        <span className="text-[9px] text-emerald-600 font-bold uppercase tracking-widest">Proofed</span>
                       </div>
                     ) : (
-                      <span className="text-gray-400 text-xs italic">No proof yet</span>
+                      <span className="text-neutral-400 text-[10px] italic">No proof uploaded</span>
                     )}
                   </td>
                   <td className="px-6 py-4">
                     {complaint.feedbackRating ? (
                       <div>
-                        <div className="flex text-yellow-500 mb-1">
+                        <div className="flex text-yellow-400 gap-0.5 mb-0.5">
                           {[...Array(5)].map((_, i) => (
                             <Star key={i} size={10} fill={i < complaint.feedbackRating ? "currentColor" : "none"} />
                           ))}
                         </div>
-                        <p className="text-[10px] text-gray-600 italic line-clamp-1">"{complaint.feedbackComment}"</p>
+                        <p className="text-[10px] text-neutral-400 italic truncate max-w-[100px]">"{complaint.feedbackComment}"</p>
                       </div>
                     ) : (
-                      <span className="text-gray-400 text-xs italic">No feedback yet</span>
+                      <span className="text-neutral-400 text-[10px] italic">Pending closure</span>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-xs text-gray-500 whitespace-nowrap">{formatDate(complaint.createdAt)}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-col gap-2">
-                      {complaint.status === 'pending' || complaint.status === 'rejected' ? (
-                        <button
+                  <td className="px-6 py-4 text-[10px] text-neutral-500 whitespace-nowrap">
+                    {formatDate(complaint.createdAt)}
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex justify-end gap-1.5">
+                      {(complaint.status === 'pending' || complaint.status === 'rejected') && (
+                        <Button
+                          size="xs"
+                          variant="primary"
                           onClick={() => { setSelectedComplaint(complaint); setShowAssignModal(true); }}
-                          className="bg-primary-500 hover:bg-primary-600 text-white px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all shadow-sm"
+                          className="text-[10px] px-2.5 py-1.5 rounded-lg bg-brand-500 text-white font-bold"
                         >
-                          Assign Task
-                        </button>
-                      ) : null}
-                      
-                      {complaint.status === 'completed' && (
-                        <div className="flex gap-1">
-                          <button
-                            onClick={() => handleVerify(complaint._id)}
-                            className="bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1"
-                          >
-                            <UserCheck size={12} /> Verify
-                          </button>
-                          <button
-                            onClick={() => handleReject(complaint._id)}
-                            className="bg-rose-500 hover:bg-rose-600 text-white px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1"
-                          >
-                            <X size={12} /> Reject
-                          </button>
-                        </div>
+                          Assign Crew
+                        </Button>
                       )}
-                      
+
+                      {complaint.status === 'completed' && (
+                        <>
+                          <Button
+                            size="xs"
+                            variant="primary"
+                            onClick={() => handleVerify(complaint._id)}
+                            className="text-[10px] px-2.5 py-1.5 rounded-lg bg-emerald-500 text-white font-bold flex items-center gap-1"
+                            icon={<UserCheck size={11} />}
+                          >
+                            Verify
+                          </Button>
+                          <Button
+                            size="xs"
+                            variant="danger"
+                            onClick={() => handleReject(complaint._id)}
+                            className="text-[10px] px-2.5 py-1.5 rounded-lg bg-red-600 text-white font-bold flex items-center gap-1"
+                            icon={<X size={11} />}
+                          >
+                            Reject
+                          </Button>
+                        </>
+                      )}
+
                       {complaint.status === 'verified' && (
-                        <span className="text-emerald-500 font-black text-[10px] flex items-center gap-1">
-                          <CheckCircle size={12} /> VERIFIED
+                        <span className="text-brand-600 dark:text-brand-400 font-black text-[9px] uppercase tracking-widest flex items-center gap-1">
+                          <CheckCircle size={12} /> ARCHIVED
                         </span>
                       )}
                     </div>
                   </td>
-                </motion.tr>
+                </tr>
               ))
             )}
           </tbody>
         </table>
       </div>
-    </AnimatedCard>
+    </Card>
   );
 
   const renderDashboardContent = () => (
-    <>
-       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
-        {[
-          { label: 'Total Reports', value: stats.totalComplaints, icon: AlertTriangle, gradient: 'from-blue-600 to-indigo-700' },
-          { label: 'Pending', value: stats.pending, icon: Clock, gradient: 'from-amber-400 to-orange-500' },
-          { label: 'Completed', value: stats.completed, icon: CheckCircle, gradient: 'from-emerald-500 to-green-700' },
-          { label: 'Total Revenue', value: stats.totalRevenue, icon: Heart, gradient: 'from-rose-500 to-pink-600', prefix: '₹' },
-          { label: 'Avg Rating', value: stats.avgRating, icon: Star, gradient: 'from-yellow-400 to-orange-400', suffix: '/5' },
-          { label: 'Total Users', value: stats.totalUsers, icon: Users, gradient: 'from-violet-500 to-purple-700' }
-        ].map((stat, index) => {
-          const Icon = stat.icon || AlertTriangle;
-          return (
-            <AnimatedCard key={index} delay={index * 0.1}>
-              <div className={`p-5 text-white rounded-2xl bg-gradient-to-br ${stat.gradient} shadow-xl relative overflow-hidden h-full group hover:scale-[1.02] transition-transform`}>
-                <div className="absolute top-0 right-0 p-4 opacity-10 transform translate-x-2 -translate-y-2 group-hover:scale-110 transition-transform">
-                  <Icon size={70} />
+    <div className="space-y-6">
+
+      {/* Overview Cards */}
+      <Card className="border border-neutral-200/50 dark:border-neutral-800 bg-white dark:bg-neutral-900/60 p-5 rounded-2xl shadow-sm">
+        <div className="flex items-center justify-between pb-3 border-b border-neutral-100 dark:border-neutral-800 mb-5">
+          <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest flex items-center gap-1.5">
+            <TrendingUp size={14} className="text-brand-500" /> Platform KPI Indicators
+          </h3>
+          <button
+            onClick={() => toggleWidget('stats')}
+            className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 p-1 hover:bg-neutral-100/70 dark:hover:bg-neutral-800/70 rounded-lg transition-colors duration-150 cursor-pointer"
+            aria-label="Toggle stats widget"
+          >
+            {widgets.stats ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </button>
+        </div>
+
+        {widgets.stats && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+            {[
+              { label: 'Total Incident Logs', value: stats.totalComplaints, icon: AlertTriangle, colors: 'bg-brand-50/50 text-brand-600 border border-brand-100 dark:bg-brand-950/10 dark:border-brand-900/30' },
+              { label: 'Pending Dispatch', value: stats.pending, icon: Clock, colors: 'bg-amber-50/50 text-amber-600 border border-amber-100 dark:bg-amber-950/10 dark:border-amber-900/30' },
+              { label: 'Verified Closed', value: stats.completed, icon: CheckCircle, colors: 'bg-emerald-50/50 text-emerald-600 border border-emerald-100 dark:bg-emerald-950/10 dark:border-emerald-900/30' },
+              { label: 'Platform Revenue', value: stats.totalRevenue, icon: DollarSign, colors: 'bg-teal-50/50 text-teal-600 border border-teal-100 dark:bg-teal-950/10 dark:border-teal-900/30', prefix: '₹' },
+              { label: 'Average Feedback', value: stats.avgRating, icon: Star, colors: 'bg-yellow-50/50 text-yellow-600 border border-yellow-100 dark:bg-yellow-950/10 dark:border-yellow-900/30', suffix: '/5' },
+              { label: 'Active Directories', value: stats.totalUsers, icon: Users, colors: 'bg-purple-50/50 text-purple-600 border border-purple-100 dark:bg-purple-950/10 dark:border-purple-900/30' }
+            ].map((stat, index) => {
+              const Icon = stat.icon;
+              return (
+                <div key={index} className={`p-4 rounded-xl flex items-center justify-between ${stat.colors}`}>
+                  <div>
+                    <p className="text-[9px] font-black uppercase tracking-widest opacity-80 mb-1">{stat.label}</p>
+                    <div className="text-xl font-black">
+                      <StatsCounter end={stat.value} duration={1} prefix={stat.prefix} suffix={stat.suffix} color="currentColor" />
+                    </div>
+                  </div>
+                  <Icon size={20} className="opacity-75" />
                 </div>
-                <div className="relative z-10">
-                   <h3 className="text-[11px] font-black text-white/80 uppercase tracking-widest flex items-center mb-1">
-                     {stat.label}
-                   </h3>
-                   <div className="text-3xl font-black mb-1">
-                     <StatsCounter end={stat.value} duration={1.5} prefix={stat.prefix} suffix={stat.suffix} color="text-white" />
-                   </div>
-                </div>
-              </div>
-            </AnimatedCard>
-          );
-        })}
+              );
+            })}
+          </div>
+        )}
+      </Card>
+
+      {/* Tables Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-black text-neutral-800 dark:text-neutral-200 uppercase tracking-widest">
+              Recent Dispatches
+            </h3>
+            <button
+              onClick={() => toggleWidget('complaints')}
+              className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 p-1 hover:bg-neutral-100/70 dark:hover:bg-neutral-800/70 rounded-lg transition-colors duration-150 cursor-pointer"
+              aria-label="Toggle complaints widget"
+            >
+              {widgets.complaints ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </button>
+          </div>
+          {widgets.complaints && renderComplaintsTable(filteredComplaints.slice(0, 4))}
+        </div>
+
+        <div className="lg:col-span-1 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-black text-neutral-800 dark:text-neutral-200 uppercase tracking-widest">
+              Live Activity Logs
+            </h3>
+            <button
+              onClick={() => toggleWidget('activity')}
+              className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 p-1 hover:bg-neutral-100/70 dark:hover:bg-neutral-800/70 rounded-lg transition-colors duration-150 cursor-pointer"
+              aria-label="Toggle activity widget"
+            >
+              {widgets.activity ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </button>
+          </div>
+          {widgets.activity && (
+            <Card className="border border-neutral-200/50 dark:border-neutral-800/80 bg-white dark:bg-neutral-900 rounded-2xl p-5 shadow-sm">
+              <RecentActivityTimeline />
+            </Card>
+          )}
+        </div>
       </div>
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-          <AlertTriangle className="mr-2 text-primary-500" /> Recent Complaints
-        </h2>
-        {renderComplaintsTable(filteredComplaints.slice(0, 5))}
-      </div>
-    </>
+
+    </div>
   );
 
   const renderComplaintsContent = () => (
-    <>
-      <div className="mb-6 flex flex-wrap gap-2">
+    <div className="space-y-5">
+      <div className="flex flex-wrap gap-2 items-center bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800 p-1.5 rounded-xl shadow-sm max-w-fit">
         {filterOptions.map((option) => (
           <button
             key={option.key}
             onClick={() => setFilter(option.key)}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${filter === option.key ? 'bg-primary-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors duration-150 cursor-pointer ${filter === option.key
+                ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 shadow-xs'
+                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100/70 dark:hover:bg-neutral-800/80'
+              }`}
           >
             {option.label}
           </button>
         ))}
       </div>
       {renderComplaintsTable(filteredComplaints)}
-    </>
+    </div>
   );
 
   const renderUsersContent = () => (
-    <>
-      <div className="mb-6 flex flex-wrap gap-2">
+    <div className="space-y-5">
+      <div className="flex flex-wrap gap-2 items-center bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800 p-1.5 rounded-xl shadow-sm max-w-fit">
         {['all', 'citizen', 'employee', 'ngo'].map(role => (
           <button
             key={role}
             onClick={() => setUserFilter(role)}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${userFilter === role ? 'bg-primary-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors duration-150 cursor-pointer uppercase tracking-wider ${userFilter === role
+                ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 shadow-xs'
+                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100/70 dark:hover:bg-neutral-800/80'
+              }`}
           >
-            {role.charAt(0).toUpperCase() + role.slice(1)}
+            {role}
           </button>
         ))}
       </div>
-      <AnimatedCard>
+
+      <Card padding="p-0" className="border border-neutral-200/50 dark:border-neutral-800/85 bg-white dark:bg-neutral-900 rounded-2xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
+          <table className="w-full text-left">
+            <thead className="bg-neutral-50 dark:bg-neutral-900/50 border-b border-neutral-100 dark:border-neutral-800">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
+                <th className="px-6 py-4 text-[10px] font-black text-neutral-400 uppercase tracking-widest">User Profile</th>
+                <th className="px-6 py-4 text-[10px] font-black text-neutral-400 uppercase tracking-widest">Assigned Workspace Role</th>
+                <th className="px-6 py-4 text-[10px] font-black text-neutral-400 uppercase tracking-widest">Registry Date</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800/50 text-xs">
               {loading ? (
-                <tr><td colSpan={3} className="px-6 py-4 text-center">Loading...</td></tr>
+                <tr><td colSpan={3} className="px-6 py-5 text-center text-neutral-400 animate-pulse">Loading directory entries...</td></tr>
               ) : filteredUsers.length === 0 ? (
-                <tr><td colSpan={3} className="px-6 py-8 text-center text-gray-500">No users found</td></tr>
+                <tr><td colSpan={3} className="px-6 py-8 text-center text-neutral-400">No matching user records found.</td></tr>
               ) : (
                 filteredUsers.map(u => (
-                  <tr key={u._id} className="hover:bg-gray-50">
+                  <tr key={u._id} className="hover:bg-neutral-50/40 dark:hover:bg-neutral-900/40 transition-colors">
                     <td className="px-6 py-4">
-                      <div className="font-medium text-gray-900">{u.name}</div>
-                      <div className="text-sm text-gray-500">{u.email}</div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-brand-50 dark:bg-brand-950 flex items-center justify-center font-bold text-brand-700 text-xs shrink-0 border border-brand-200/40">
+                          {u.name?.charAt(0) || 'U'}
+                        </div>
+                        <div>
+                          <div className="font-bold text-neutral-800 dark:text-neutral-200">{u.name}</div>
+                          <div className="text-[10px] text-neutral-400 mt-0.5">{u.email}</div>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 uppercase">
+                      <span className="px-2.5 py-0.5 rounded text-[10px] font-black uppercase tracking-widest bg-brand-50 dark:bg-brand-950/20 text-brand-600 dark:text-brand-400">
                         {u.role}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">{formatDate(u.createdAt)}</td>
+                    <td className="px-6 py-4 text-[10px] text-neutral-400">{formatDate(u.createdAt)}</td>
                   </tr>
                 ))
               )}
             </tbody>
           </table>
         </div>
-      </AnimatedCard>
-    </>
+      </Card>
+    </div>
   );
 
   const renderAnalyticsContent = () => {
-    // Calculate Total Revenue
-    const totalRevenue = adminDonations
-      .filter(d => d.status === 'success' || d.status === 'paid')
-      .reduce((sum, d) => sum + d.amount, 0);
-
     return (
-      <div className="space-y-6">
-        {/* Top Level Financials & Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <AnimatedCard>
-            <div className="p-6 bg-gradient-to-br from-green-500 to-emerald-700 text-white rounded-xl shadow-lg relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4 opacity-20">
-                <Heart size={80} />
-              </div>
-              <div className="relative z-10">
-                <h3 className="text-lg font-medium text-green-50 flex items-center mb-2">
-                   <Heart className="mr-2" size={20} /> Total Revenue Collected
-                </h3>
-                <div className="text-4xl font-bold mb-1">
-                  <StatsCounter end={totalRevenue} duration={2} prefix="₹" color="text-white" />
-                </div>
-                <p className="text-green-100 text-sm">from generous citizen donations</p>
-              </div>
-            </div>
-          </AnimatedCard>
-          
-          <AnimatedCard delay={0.1}>
-            <div className="p-6 bg-gradient-to-br from-blue-500 to-indigo-700 text-white rounded-xl shadow-lg relative overflow-hidden">
-               <div className="absolute top-0 right-0 p-4 opacity-20">
-                <Users size={80} />
-              </div>
-              <div className="relative z-10">
-                <h3 className="text-lg font-medium text-blue-50 flex items-center mb-2">
-                   <Users className="mr-2" size={20} /> Total Platform Users
-                </h3>
-                <div className="text-4xl font-bold mb-1">
-                  <StatsCounter end={stats.totalUsers} duration={1.5} color="text-white" />
-                </div>
-                <p className="text-blue-100 text-sm">registered community members</p>
-              </div>
-            </div>
-          </AnimatedCard>
-        </div>
-
-        {/* Detailed Breakdowns */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Complaints by Category */}
-          <AnimatedCard delay={0.2}>
-            <div className="p-8 h-full bg-white rounded-xl border border-gray-100 shadow-sm">
-              <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-                <AlertTriangle className="mr-2 text-orange-500" size={24} /> Complaints by Category
-              </h3>
-              <div className="space-y-6">
-                {statsDataRaw?.complaintsByCategory?.length > 0 ? statsDataRaw.complaintsByCategory.map((c, index) => {
-                  const percent = Math.min((c.count / (stats.totalComplaints || 1)) * 100, 100);
-                  return (
-                    <div key={c._id} className="group">
-                      <div className="flex justify-between text-sm mb-2">
-                        <span className="font-semibold text-gray-700 capitalize group-hover:text-primary-600 transition-colors">{c._id}</span>
-                        <span className="text-gray-500 font-bold bg-gray-100 px-3 py-1 rounded-full">{c.count}</span>
-                      </div>
-                      <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
-                        <motion.div 
-                          initial={{ width: 0 }}
-                          animate={{ width: `${percent}%` }}
-                          transition={{ duration: 1, delay: index * 0.1 }}
-                          className="bg-primary-500 h-full rounded-full shadow-inner" 
-                        ></motion.div>
-                      </div>
-                    </div>
-                  );
-                }) : <div className="text-center py-8 text-gray-400">No category data available.</div>}
-              </div>
-            </div>
-          </AnimatedCard>
-
-          {/* User Demographics */}
-          <AnimatedCard delay={0.3}>
-            <div className="p-8 h-full bg-white rounded-xl border border-gray-100 shadow-sm">
-              <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-                <Users className="mr-2 text-blue-500" size={24} /> User Demographics
-              </h3>
-              <div className="space-y-4">
-                {[
-                  { label: 'Citizens', count: statsDataRaw?.users?.citizenCount || 0, color: 'text-green-600', bg: 'bg-green-50', icon: UserCheck },
-                  { label: 'Employees', count: statsDataRaw?.users?.employeeCount || 0, color: 'text-blue-600', bg: 'bg-blue-50', icon: Users },
-                  { label: 'NGOs', count: statsDataRaw?.users?.ngoCount || 0, color: 'text-purple-600', bg: 'bg-purple-50', icon: FileText }
-                ].map((demo, idx) => {
-                  const Icon = demo.icon;
-                  return (
-                    <motion.div 
-                      key={demo.label}
-                      whileHover={{ scale: 1.02 }}
-                      className={`flex justify-between items-center p-5 rounded-xl border border-transparent hover:border-gray-200 transition-all ${demo.bg}`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className={`p-2 bg-white rounded-lg shadow-sm ${demo.color}`}>
-                          <Icon size={20} />
-                        </div>
-                        <span className="text-gray-800 font-semibold">{demo.label}</span>
-                      </div>
-                      <span className={`text-2xl font-bold bg-white px-4 py-1 rounded-lg shadow-sm ${demo.color}`}>
-                        {demo.count}
-                      </span>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </div>
-          </AnimatedCard>
-        </div>
-      </div>
+      <AnalyticsDashboard
+        complaints={complaints}
+        employees={employees}
+        ngos={ngos}
+        donations={adminDonations}
+        loading={loading}
+      />
     );
   };
 
@@ -546,90 +541,85 @@ const AdminDashboard = ({ activeTab = 'dashboard' }) => {
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <AnimatedCard>
-            <div className="p-6 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-              <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center">
-                <DollarSign className="text-emerald-600" size={24} />
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Total Revenue</p>
-                <p className="text-2xl font-black text-gray-900">₹{totalDonated.toLocaleString('en-IN')}</p>
-              </div>
+          <Card className="p-5 border border-neutral-200/50 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-sm flex items-center gap-4">
+            <div className="w-10 h-10 bg-emerald-50 dark:bg-emerald-950/20 rounded-xl flex items-center justify-center text-emerald-600">
+              <DollarSign size={20} />
             </div>
-          </AnimatedCard>
-          <AnimatedCard delay={0.1}>
-            <div className="p-6 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-              <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
-                <Heart className="text-blue-600" size={24} />
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Total Donations</p>
-                <p className="text-2xl font-black text-gray-900">{adminDonations.length}</p>
-              </div>
+            <div>
+              <p className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Aggregate Capital</p>
+              <p className="text-xl font-black text-neutral-800 dark:text-neutral-100">₹{totalDonated.toLocaleString('en-IN')}</p>
             </div>
-          </AnimatedCard>
-          <AnimatedCard delay={0.2}>
-            <div className="p-6 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-              <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center">
-                <TrendingUp className="text-purple-600" size={24} />
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Avg Donation</p>
-                <p className="text-2xl font-black text-gray-900">
-                  ₹{adminDonations.length > 0 ? Math.round(totalDonated / adminDonations.length).toLocaleString('en-IN') : 0}
-                </p>
-              </div>
+          </Card>
+
+          <Card className="p-5 border border-neutral-200/50 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-sm flex items-center gap-4" delay={0.05}>
+            <div className="w-10 h-10 bg-blue-50 dark:bg-blue-950/20 rounded-xl flex items-center justify-center text-blue-600">
+              <Heart size={20} />
             </div>
-          </AnimatedCard>
+            <div>
+              <p className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Total Deposits</p>
+              <p className="text-xl font-black text-neutral-800 dark:text-neutral-100">{adminDonations.length}</p>
+            </div>
+          </Card>
+
+          <Card className="p-5 border border-neutral-200/50 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-sm flex items-center gap-4" delay={0.1}>
+            <div className="w-10 h-10 bg-purple-50 dark:bg-purple-950/20 rounded-xl flex items-center justify-center text-purple-600">
+              <TrendingUp size={20} />
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Average Support</p>
+              <p className="text-xl font-black text-neutral-800 dark:text-neutral-100">
+                ₹{adminDonations.length > 0 ? Math.round(totalDonated / adminDonations.length).toLocaleString('en-IN') : 0}
+              </p>
+            </div>
+          </Card>
         </div>
 
-        <AnimatedCard>
+        <Card padding="p-0" className="border border-neutral-200/50 dark:border-neutral-800 bg-white dark:bg-neutral-900 rounded-2xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50/50">
+            <table className="w-full text-left">
+              <thead className="bg-neutral-50 dark:bg-neutral-900/50 border-b border-neutral-100 dark:border-neutral-800">
                 <tr>
-                  <th className="px-6 py-4 text-left text-[11px] font-black text-gray-400 uppercase tracking-widest">Citizen</th>
-                  <th className="px-6 py-4 text-left text-[11px] font-black text-gray-400 uppercase tracking-widest">Amount</th>
-                  <th className="px-6 py-4 text-left text-[11px] font-black text-gray-400 uppercase tracking-widest">Date & Time</th>
-                  <th className="px-6 py-4 text-left text-[11px] font-black text-gray-400 uppercase tracking-widest">Status</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-neutral-400 uppercase tracking-widest">Supporter Profile</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-neutral-400 uppercase tracking-widest">Capital Contributed</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-neutral-400 uppercase tracking-widest">Received Date</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-neutral-400 uppercase tracking-widest">Status</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-100">
+              <tbody className="divide-y divide-neutral-100 dark:divide-neutral-850/50 text-xs">
                 {loading ? (
-                  <tr><td colSpan={4} className="px-6 py-4 text-center">Loading...</td></tr>
+                  <tr><td colSpan={4} className="px-6 py-5 text-center text-neutral-400">Loading ledger transaction records...</td></tr>
                 ) : adminDonations.length === 0 ? (
-                  <tr><td colSpan={4} className="px-6 py-12 text-center text-gray-500">No donations found</td></tr>
+                  <tr><td colSpan={4} className="px-6 py-8 text-center text-neutral-400">No support capital logs recorded.</td></tr>
                 ) : (
                   adminDonations.map(d => (
-                    <tr key={d._id} className="hover:bg-gray-50/50 transition-colors">
+                    <tr key={d._id} className="hover:bg-neutral-50/40 dark:hover:bg-neutral-900/40 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-xs">
+                          <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-emerald-700 text-xs font-bold shrink-0">
                             {d.userId?.name?.charAt(0) || 'U'}
                           </div>
                           <div>
-                            <div className="font-bold text-gray-900">{d.userId?.name || 'Unknown User'}</div>
-                            <div className="text-xs text-gray-500">{d.userId?.email || 'N/A'}</div>
+                            <div className="font-bold text-neutral-850 dark:text-neutral-250">{d.userId?.name || 'Supporting Citizen'}</div>
+                            <div className="text-[10px] text-neutral-400 mt-0.5">{d.userId?.email || 'No email log'}</div>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="font-black text-gray-900 text-lg">
+                        <span className="font-black text-neutral-900 dark:text-neutral-50">
                           ₹{d.amount.toLocaleString('en-IN')}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
+                      <td className="px-6 py-4 text-[10px] text-neutral-400">
                         <div className="flex flex-col">
-                          <span className="font-medium text-gray-700">{new Date(d.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric'})}</span>
-                          <span className="text-xs opacity-60">{new Date(d.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit'})}</span>
+                          <span className="font-bold text-neutral-750 dark:text-neutral-300">{new Date(d.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                          <span className="text-[9px] opacity-70 mt-0.5">{new Date(d.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest ${
-                          d.status === 'success' || d.status === 'paid' 
-                            ? 'bg-emerald-100 text-emerald-700' 
-                            : 'bg-amber-100 text-amber-700'
-                        }`}>
+                        <span className={`px-2.5 py-0.5 rounded text-[10px] font-black uppercase tracking-widest ${d.status === 'success' || d.status === 'paid'
+                            ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400'
+                            : 'bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400'
+                          }`}>
                           {d.status === 'success' || d.status === 'paid' ? 'Paid' : d.status}
                         </span>
                       </td>
@@ -639,116 +629,105 @@ const AdminDashboard = ({ activeTab = 'dashboard' }) => {
               </tbody>
             </table>
           </div>
-        </AnimatedCard>
+        </Card>
       </div>
     );
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">{tabInfo[activeTab]?.title || tabInfo.dashboard.title}</h1>
-          <p className="text-gray-600 mt-1">{tabInfo[activeTab]?.desc || tabInfo.dashboard.desc}</p>
-        </motion.div>
+    <div className="space-y-6 text-left">
 
-        {activeTab === 'dashboard' && renderDashboardContent()}
-        {activeTab === 'complaints' && renderComplaintsContent()}
-        {activeTab === 'users' && renderUsersContent()}
-        {activeTab === 'donations' && renderDonationsContent()}
-        {activeTab === 'analytics' && renderAnalyticsContent()}
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-black tracking-tight text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+            <Sparkles className="text-brand-500" size={20} /> {tabInfo[activeTab]?.title || tabInfo.dashboard.title}
+          </h1>
+          <p className="text-xs text-neutral-500">
+            {tabInfo[activeTab]?.desc || tabInfo.dashboard.desc}
+          </p>
+        </div>
       </div>
 
-      {/* Assign Modal */}
-      <AnimatePresence>
-        {showAssignModal && selectedComplaint && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-xl max-w-md w-full"
+      {/* Render active tabs contents */}
+      {activeTab === 'dashboard' && renderDashboardContent()}
+      {activeTab === 'complaints' && renderComplaintsContent()}
+      {activeTab === 'users' && renderUsersContent()}
+      {activeTab === 'donations' && renderDonationsContent()}
+      {activeTab === 'analytics' && renderAnalyticsContent()}
+      {activeTab === 'audit-logs' && <AuditLogViewer />}
+
+      {/* Task Assignment Modal Layout */}
+      <Modal
+        isOpen={showAssignModal && !!selectedComplaint}
+        onClose={() => setShowAssignModal(false)}
+        title="Assign Cleanup Crew Task"
+        size="md"
+      >
+        <div className="space-y-5 text-left">
+          <div className="p-4 bg-neutral-50 dark:bg-neutral-900 rounded-xl border border-neutral-100 dark:border-neutral-800">
+            <label className="block text-xs font-black text-neutral-500 uppercase tracking-widest mb-1">
+              Active Complaint Details
+            </label>
+            <p className="text-xs font-bold text-neutral-900 dark:text-neutral-100 truncate">{selectedComplaint?.title}</p>
+            <p className="text-[11px] text-neutral-500 mt-1 leading-normal">{selectedComplaint?.description}</p>
+          </div>
+
+          <div>
+            <label htmlFor="assignType" className="block text-xs font-black text-neutral-500 uppercase tracking-widest mb-1.5">
+              Assignment Mode
+            </label>
+            <select
+              id="assignType"
+              value={assignType}
+              onChange={(e) => {
+                setAssignType(e.target.value);
+                setAssignTo('');
+              }}
+              className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-850 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
             >
-              <div className="p-6">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-xl font-bold text-gray-900">Assign Complaint</h3>
-                  <button
-                    onClick={() => setShowAssignModal(false)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <X size={24} />
-                  </button>
-                </div>
+              <option value="employee">Municipal Employee</option>
+              <option value="ngo">NGO Volunteer Partner</option>
+            </select>
+          </div>
 
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Complaint: {selectedComplaint.title}
-                    </label>
-                    <p className="text-sm text-gray-600">{selectedComplaint.description}</p>
-                  </div>
+          <div>
+            <label htmlFor="assignTo" className="block text-xs font-black text-neutral-500 uppercase tracking-widest mb-1.5">
+              Select Assignee profile
+            </label>
+            <select
+              id="assignTo"
+              value={assignTo}
+              onChange={(e) => setAssignTo(e.target.value)}
+              className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-850 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
+            >
+              <option value="">Select dispatch target</option>
+              {(assignType === 'employee' ? employees : ngos).map((person) => (
+                <option key={person._id} value={person._id}>
+                  {person.name} - {person.email}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Assign Type
-                    </label>
-                    <select
-                      value={assignType}
-                      onChange={(e) => {
-                        setAssignType(e.target.value);
-                        setAssignTo('');
-                      }}
-                      className="input-field"
-                    >
-                      <option value="employee">Employee</option>
-                      <option value="ngo">NGO</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Assign To
-                    </label>
-                    <select
-                      value={assignTo}
-                      onChange={(e) => setAssignTo(e.target.value)}
-                      className="input-field"
-                    >
-                      <option value="">Select {assignType}</option>
-                      {(assignType === 'employee' ? employees : ngos).map((person) => (
-                        <option key={person._id} value={person._id}>
-                          {person.name} - {person.email}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="flex space-x-4 pt-6">
-                  <button
-                    onClick={() => setShowAssignModal(false)}
-                    className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg font-medium transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleAssign}
-                    className="flex-1 bg-primary-500 hover:bg-primary-600 text-white py-2 px-4 rounded-lg font-medium transition-colors"
-                  >
-                    Assign
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        <div className="flex space-x-4 pt-4 border-t border-neutral-100 dark:border-neutral-850 mt-5">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => setShowAssignModal(false)}
+            className="flex-1 rounded-xl text-xs py-2 bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleAssign}
+            className="flex-1 rounded-xl text-xs py-2 bg-brand-500 text-white"
+          >
+            Dispatch Task
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 };

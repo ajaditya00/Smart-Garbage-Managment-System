@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { validationResult } from 'express-validator';
 import User from '../models/User.js';
+import { recordAuditLog } from '../utils/auditLogger.js';
 
 // Generate JWT Token
 const generateToken = (id) => {
@@ -37,6 +38,24 @@ const register = async (req, res) => {
     });
 
     if (user) {
+      // Audit Log: CREATE User
+      recordAuditLog({
+        req,
+        user: { _id: user._id, name: user.name, email: user.email, role: user.role },
+        action: 'CREATE',
+        resource: 'User',
+        resourceId: user._id,
+        target: { name: user.name, email: user.email, identifier: user._id.toString() },
+        description: `New user account created: "${user.name}" (${user.email}) registered as ${user.role.toUpperCase()}`,
+        details: {
+          userId: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          phone: user.phone
+        }
+      });
+
       res.status(201).json({
         _id: user._id,
         name: user.name,
@@ -69,6 +88,21 @@ const login = async (req, res) => {
     const user = await User.findOne({ email });
 
     if (user && (await user.comparePassword(password))) {
+      // Audit Log: LOGIN
+      recordAuditLog({
+        req,
+        user: { _id: user._id, name: user.name, email: user.email, role: user.role },
+        action: 'LOGIN',
+        resource: 'Auth',
+        resourceId: user._id,
+        target: { name: user.name, email: user.email, identifier: user._id.toString() },
+        description: `User "${user.name}" (${user.role.toUpperCase()}) authenticated successfully`,
+        details: {
+          email: user.email,
+          role: user.role
+        }
+      });
+
       res.json({
         _id: user._id,
         name: user.name,
@@ -78,6 +112,17 @@ const login = async (req, res) => {
         token: generateToken(user._id)
       });
     } else {
+      // Audit Log failed login attempt
+      recordAuditLog({
+        req,
+        action: 'LOGIN',
+        resource: 'Auth',
+        target: { email },
+        description: `Failed login attempt for email: "${email}"`,
+        details: { attemptedEmail: email },
+        status: 'failed'
+      });
+
       res.status(401).json({ message: 'Invalid credentials' });
     }
   } catch (error) {

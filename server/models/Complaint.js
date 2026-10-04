@@ -18,12 +18,12 @@ const complaintSchema = new mongoose.Schema({
   },
   // Stores additional Cloudinary metadata for easy retrieval
   imageData: {
-    publicId:   { type: String, default: null }, // Cloudinary public_id
-    url:        { type: String, default: null }, // Cloudinary secure_url (same as image field)
-    format:     { type: String, default: null }, // e.g. "jpg"
-    width:      { type: Number, default: null },
-    height:     { type: Number, default: null },
-    bytes:      { type: Number, default: null }  // file size in bytes
+    publicId: { type: String, default: null }, // Cloudinary public_id
+    url: { type: String, default: null }, // Cloudinary secure_url (same as image field)
+    format: { type: String, default: null }, // e.g. "jpg"
+    width: { type: Number, default: null },
+    height: { type: Number, default: null },
+    bytes: { type: Number, default: null }  // file size in bytes
   },
   location: {
     latitude: {
@@ -79,5 +79,12 @@ const complaintSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+// Database indexes for fast querying, filtering, and sorting
+complaintSchema.index({ userId: 1, createdAt: -1 });
+complaintSchema.index({ assignedTo: 1, status: 1 });
+complaintSchema.index({ status: 1, createdAt: -1 });
+complaintSchema.index({ category: 1 });
+complaintSchema.index({ createdAt: -1 });
 
 export default mongoose.model('Complaint', complaintSchema);
