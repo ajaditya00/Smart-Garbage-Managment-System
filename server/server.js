@@ -34,9 +34,27 @@ const app = express();
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// CORS middleware
+// CORS middleware allowing Vercel production, preview deployments, and local development
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://smart-garbage-managment-system.vercel.app',
+  'https://smart-garbage-drab.vercel.app',
+  process.env.CLIENT_URL
+].filter(Boolean);
+
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' ? process.env.CLIENT_URL : 'http://localhost:5173',
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    if (
+      allowedOrigins.includes(origin) ||
+      origin.endsWith('.vercel.app') ||
+      process.env.NODE_ENV !== 'production'
+    ) {
+      return callback(null, true);
+    }
+    return callback(new Error(`CORS policy does not allow access from ${origin}`));
+  },
   credentials: true
 }));
 
