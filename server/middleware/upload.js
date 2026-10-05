@@ -1,13 +1,43 @@
 import multer from 'multer';
 import path from 'path';
+import dotenv from 'dotenv';
 import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 
-// ─── Lazy Cloudinary configuration ───────────────────────────────────────────
-// Configure INSIDE the params function (called at request time, not import time)
-// so that process.env is populated after dotenv.config() has run in server.js.
-// ─────────────────────────────────────────────────────────────────────────────
-function getCloudinaryInstance() {
+// Ensure environment variables are loaded if upload.js is evaluated before server.js dotenv.config()
+dotenv.config();
+
+// ─── Cloudinary configuration & validation ──────────────────────────────────
+function validateCloudinaryConfig({ throwOnMissing = false } = {}) {
+  const missing = [];
+  if (!process.env.CLOUDINARY_CLOUD_NAME) missing.push('CLOUDINARY_CLOUD_NAME');
+  if (!process.env.CLOUDINARY_API_KEY) missing.push('CLOUDINARY_API_KEY');
+  if (!process.env.CLOUDINARY_API_SECRET) missing.push('CLOUDINARY_API_SECRET');
+
+  if (missing.length > 0) {
+    const errorMsg = `Cloudinary configuration error: Missing required environment variable(s): ${missing.join(', ')}. Image uploads will fail. Please configure them in your environment settings.`;
+    if (throwOnMissing || process.env.NODE_ENV === 'production') {
+      throw new Error(errorMsg);
+    } else {
+      console.warn(`[Cloudinary Warning] ${errorMsg}`);
+    }
+    return false;
+  }
+  return true;
+}
+
+function getCloudinaryInstance({ isUpload = false } = {}) {
+  const missing = [];
+  if (!process.env.CLOUDINARY_CLOUD_NAME) missing.push('CLOUDINARY_CLOUD_NAME');
+  if (!process.env.CLOUDINARY_API_KEY) missing.push('CLOUDINARY_API_KEY');
+  if (!process.env.CLOUDINARY_API_SECRET) missing.push('CLOUDINARY_API_SECRET');
+
+  if (missing.length > 0) {
+    if (isUpload || process.env.NODE_ENV === 'production') {
+      throw new Error(`Cloudinary is not configured. Missing required credentials: ${missing.join(', ')}`);
+    }
+  }
+
   cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key   : process.env.CLOUDINARY_API_KEY,
@@ -20,8 +50,8 @@ function getCloudinaryInstance() {
 const complaintStorage = new CloudinaryStorage({
   cloudinary: getCloudinaryInstance(),
   params: (req, file) => {
-    // Re-configure at request time to guarantee env vars are loaded
-    getCloudinaryInstance();
+    // Validate credentials when upload occurs
+    getCloudinaryInstance({ isUpload: true });
     return {
       folder        : 'swachh-ai/complaints',
       allowed_formats: ['jpeg', 'jpg', 'png', 'gif', 'webp'],
@@ -68,5 +98,5 @@ const standaloneUpload = multer({
   fileFilter: imageFileFilter
 });
 
-export { complaintUpload, standaloneUpload };
+export { complaintUpload, standaloneUpload, validateCloudinaryConfig };
 export default complaintUpload;

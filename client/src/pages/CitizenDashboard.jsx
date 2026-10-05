@@ -463,7 +463,7 @@ const CitizenDashboard = () => {
               required
               value={formData.title}
               onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-              className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-850 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
+              className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
               placeholder="Brief description of the issue"
             />
           </div>
@@ -477,7 +477,7 @@ const CitizenDashboard = () => {
                 id="category"
                 value={formData.category}
                 onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-850 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
+                className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
               >
                 {categories.map(cat => (
                   <option key={cat} value={cat}>
@@ -512,7 +512,7 @@ const CitizenDashboard = () => {
                   ...prev,
                   location: { ...prev.location, address: e.target.value }
                 }))}
-                className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-850 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
+                className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
                 placeholder="Enter address coordinates"
               />
               
@@ -526,7 +526,7 @@ const CitizenDashboard = () => {
                     ...prev,
                     location: { ...prev.location, latitude: e.target.value }
                   }))}
-                  className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-850 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
+                  className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
                   placeholder="Latitude (optional)"
                 />
                 <input
@@ -538,7 +538,7 @@ const CitizenDashboard = () => {
                     ...prev,
                     location: { ...prev.location, longitude: e.target.value }
                   }))}
-                  className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-850 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
+                  className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
                   placeholder="Longitude (optional)"
                 />
               </div>
@@ -571,12 +571,12 @@ const CitizenDashboard = () => {
               rows={3}
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-850 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
+              className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
               placeholder="Provide directions or urgency details..."
             />
           </div>
 
-          <div className="flex space-x-4 pt-3 border-t border-neutral-100 dark:border-neutral-850">
+          <div className="flex space-x-4 pt-3 border-t border-neutral-100 dark:border-neutral-800">
             <Button
               type="button"
               variant="secondary"
@@ -605,9 +605,9 @@ const CitizenDashboard = () => {
       >
         <div className="mb-5 text-left">
           <p className="text-xs text-neutral-500 mb-3.5">
-            How would you rate the resolution quality for: <span className="font-bold text-neutral-850 dark:text-neutral-100">{selectedComplaint?.title}</span>?
+            How would you rate the resolution quality for: <span className="font-bold text-neutral-900 dark:text-neutral-100">{selectedComplaint?.title}</span>?
           </p>
-          <div className="flex justify-center mb-5 bg-neutral-50 dark:bg-neutral-900/50 py-3.5 rounded-xl border border-neutral-100 dark:border-neutral-850">
+          <div className="flex justify-center mb-5 bg-neutral-50 dark:bg-neutral-900/50 py-3.5 rounded-xl border border-neutral-100 dark:border-neutral-800">
             <StarRating
               rating={feedbackData.rating}
               setRating={(rating) => setFeedbackData(prev => ({ ...prev, rating }))}
@@ -622,12 +622,12 @@ const CitizenDashboard = () => {
             rows={3}
             value={feedbackData.comment}
             onChange={(e) => setFeedbackData(prev => ({ ...prev, comment: e.target.value }))}
-            className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-850 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
+            className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
             placeholder="Share feedback on cleanup quality..."
           />
         </div>
 
-        <div className="flex space-x-4 pt-3 border-t border-neutral-100 dark:border-neutral-850">
+        <div className="flex space-x-4 pt-3 border-t border-neutral-100 dark:border-neutral-800">
           <Button
             type="button"
             variant="secondary"

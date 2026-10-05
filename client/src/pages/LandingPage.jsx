@@ -187,7 +187,7 @@ const LandingPage = () => {
           {features.map((feat, index) => {
             const Icon = feat.icon;
             return (
-              <Card key={index} padding="p-6" className="border border-neutral-200/50 dark:border-neutral-850 bg-white dark:bg-neutral-900 shadow-sm hover:shadow-md transition-shadow group">
+              <Card key={index} padding="p-6" className="border border-neutral-200/50 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-sm hover:shadow-md transition-shadow group">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-5 ${feat.bg} border border-neutral-100 dark:border-neutral-800`}>
                   <Icon size={20} className={feat.color} />
                 </div>
@@ -222,10 +222,10 @@ const LandingPage = () => {
               return (
                 <div key={idx} className="relative space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-3xl font-black text-neutral-200 dark:text-neutral-850 select-none">
+                    <span className="text-3xl font-black text-neutral-200 dark:text-neutral-800 select-none">
                       {s.step}
                     </span>
-                    <div className="p-2 rounded-lg bg-neutral-100 dark:bg-neutral-850 text-neutral-500">
+                    <div className="p-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-500">
                       <Icon size={16} />
                     </div>
                   </div>
@@ -253,12 +253,12 @@ const LandingPage = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {testimonials.map((t, idx) => (
-            <Card key={idx} padding="p-6" className="border border-neutral-200/50 dark:border-neutral-850 bg-white dark:bg-neutral-900 shadow-sm flex flex-col justify-between h-full">
+            <Card key={idx} padding="p-6" className="border border-neutral-200/50 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-sm flex flex-col justify-between h-full">
               <p className="text-xs text-neutral-500 leading-relaxed italic">
                 "{t.text}"
               </p>
               <div className="flex items-center space-x-3 mt-6 pt-4 border-t border-neutral-100 dark:border-neutral-800">
-                <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-950 flex items-center justify-center font-bold text-brand-700 text-xs shrink-0">
+                <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-950 flex items-center justify-center font-bold text-brand-700 dark:text-brand-400 text-xs shrink-0">
                   {t.avatar}
                 </div>
                 <div>

@@ -505,28 +505,31 @@ const AnalyticsDashboard = ({ complaints = [], employees = [], ngos = [], donati
           ))}
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-2">
           <Button 
-            size="xs" 
+            size="sm" 
             variant="secondary" 
             onClick={exportToCSV}
             icon={<Download size={14} />}
+            className="text-xs font-semibold px-3.5 py-1.5 rounded-lg border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-700/70 shadow-xs"
           >
             CSV
           </Button>
           <Button 
-            size="xs" 
+            size="sm" 
             variant="secondary" 
             onClick={exportToExcel}
             icon={<FileText size={14} />}
+            className="text-xs font-semibold px-3.5 py-1.5 rounded-lg border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-700/70 shadow-xs"
           >
             Excel
           </Button>
           <Button 
-            size="xs" 
+            size="sm" 
             variant="primary" 
             onClick={handlePrint}
             icon={<Printer size={14} />}
+            className="text-xs font-semibold px-3.5 py-1.5 rounded-lg bg-brand-500 hover:bg-brand-600 text-white shadow-xs"
           >
             Print Overview
           </Button>
@@ -560,7 +563,7 @@ const AnalyticsDashboard = ({ complaints = [], employees = [], ngos = [], donati
                           <p className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">{stat.label}</p>
                           <p className="text-3xl font-black text-neutral-800 dark:text-neutral-100 mt-2">{stat.value}</p>
                         </div>
-                        <div className={`p-2.5 rounded-xl bg-white dark:bg-neutral-850 shadow-sm ${stat.color}`}>
+                        <div className={`p-2.5 rounded-xl bg-white dark:bg-neutral-800 shadow-sm ${stat.color}`}>
                           <Icon size={18} />
                         </div>
                       </div>
@@ -578,7 +581,7 @@ const AnalyticsDashboard = ({ complaints = [], employees = [], ngos = [], donati
                     <h3 className="text-xs font-black uppercase tracking-widest text-neutral-800 dark:text-neutral-200">
                       Garbage Complaint Density Trend
                     </h3>
-                    <span className="text-[10px] font-black bg-brand-100 dark:bg-brand-950 text-brand-700 px-3 py-1 rounded-full uppercase">
+                    <span className="text-[10px] font-black bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-400 px-3 py-1 rounded-full uppercase">
                       Timeline Log
                     </span>
                   </div>
@@ -689,7 +692,7 @@ const AnalyticsDashboard = ({ complaints = [], employees = [], ngos = [], donati
                     {employeeLeaderboard.slice(0, 4).map((emp, index) => (
                       <div key={emp.id} className="flex items-center justify-between p-3.5 bg-neutral-50 dark:bg-neutral-900 rounded-xl">
                         <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-950 flex items-center justify-center font-black text-brand-700 text-xs">
+                          <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-950 flex items-center justify-center font-black text-brand-700 dark:text-brand-400 text-xs">
                             {index + 1}
                           </div>
                           <div>
@@ -821,7 +824,7 @@ const AnalyticsDashboard = ({ complaints = [], employees = [], ngos = [], donati
                         <th className="pb-3 text-[10px] text-right">Score</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-neutral-50 dark:divide-neutral-850">
+                    <tbody className="divide-y divide-neutral-50 dark:divide-neutral-800">
                       {employeeLeaderboard.map((emp, index) => (
                         <tr key={emp.id} className="hover:bg-neutral-50/50 dark:hover:bg-neutral-900/30 transition-colors">
                           <td className="py-4">
@@ -864,7 +867,7 @@ const AnalyticsDashboard = ({ complaints = [], employees = [], ngos = [], donati
                         <th className="pb-3 text-[10px] text-right">Coverage areas</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-neutral-50 dark:divide-neutral-850">
+                    <tbody className="divide-y divide-neutral-50 dark:divide-neutral-800">
                       {ngoLeaderboard.map(ngo => (
                         <tr key={ngo.id} className="hover:bg-neutral-50/50 dark:hover:bg-neutral-900/30 transition-colors">
                           <td className="py-4 font-bold text-neutral-800 dark:text-neutral-100">{ngo.name}</td>
@@ -916,7 +919,7 @@ const AnalyticsDashboard = ({ complaints = [], employees = [], ngos = [], donati
                   <h3 className="text-xs font-black uppercase tracking-widest text-neutral-800 dark:text-neutral-200">
                     Cumulative Revenue Collections & Growth
                   </h3>
-                  <span className="text-[10px] font-black bg-emerald-100 dark:bg-emerald-950 text-emerald-700 px-3 py-1 rounded-full uppercase">
+                  <span className="text-[10px] font-black bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 px-3 py-1 rounded-full uppercase">
                     Stripe Sync Active
                   </span>
                 </div>

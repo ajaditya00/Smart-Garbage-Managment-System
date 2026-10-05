@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, CheckCircle, Clock, AlertTriangle, X, UserCheck, Heart, FileText, Star, TrendingUp, DollarSign, ChevronDown, ChevronUp, Eye, EyeOff, Sparkles, Filter, ShieldCheck, Mail, ArrowUpRight } from 'lucide-react';
+import { Users, CheckCircle, Clock, AlertTriangle, X, UserCheck, Heart, FileText, Star, TrendingUp, DollarSign, ChevronDown, ChevronUp, Eye, EyeOff, Sparkles, Filter, ShieldCheck, Mail, ArrowUpRight, Truck, Activity, User } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../utils/api';
 import Button from '../components/Button';
@@ -211,105 +211,122 @@ const AdminDashboard = ({ activeTab = 'dashboard' }) => {
   };
 
   const renderComplaintsTable = (data) => (
-    <Card padding="p-0" className="border border-neutral-200/50 dark:border-neutral-800/80 bg-white dark:bg-neutral-900 rounded-2xl overflow-hidden shadow-sm">
+    <Card padding="p-0" className="border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900 rounded-2xl overflow-hidden shadow-xs">
       <div className="overflow-x-auto">
-        <table className="w-full text-left">
-          <thead className="bg-neutral-50 dark:bg-neutral-900/50 border-b border-neutral-100 dark:border-neutral-800">
+        <table className="w-full text-left border-collapse min-w-[700px]">
+          <thead className="bg-neutral-50/75 dark:bg-neutral-800/40 border-b border-neutral-200/60 dark:border-neutral-800 text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
             <tr>
-              <th className="px-6 py-4 text-[10px] font-black text-neutral-400 uppercase tracking-widest">Incident Details</th>
-              <th className="px-6 py-4 text-[10px] font-black text-neutral-400 uppercase tracking-widest">Reporter</th>
-              <th className="px-6 py-4 text-[10px] font-black text-neutral-400 uppercase tracking-widest">Assignment Status</th>
-              <th className="px-6 py-4 text-[10px] font-black text-neutral-400 uppercase tracking-widest">Action Proof</th>
-              <th className="px-6 py-4 text-[10px] font-black text-neutral-400 uppercase tracking-widest">Citizen Review</th>
-              <th className="px-6 py-4 text-[10px] font-black text-neutral-400 uppercase tracking-widest">Created Date</th>
-              <th className="px-6 py-4 text-[10px] font-black text-neutral-400 uppercase tracking-widest text-right">Actions</th>
+              <th className="px-4 py-3">Incident Details</th>
+              <th className="px-4 py-3">Reporter</th>
+              <th className="px-4 py-3">Assignment Status</th>
+              <th className="px-4 py-3">Action Proof</th>
+              <th className="px-4 py-3">Citizen Review</th>
+              <th className="px-4 py-3">Created Date</th>
+              <th className="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800/50">
+          <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800/60">
             {loading ? (
               [...Array(3)].map((_, i) => (
                 <tr key={i}>
-                  <td colSpan={7} className="px-6 py-5">
+                  <td colSpan={7} className="px-4 py-5">
                     <div className="h-4 bg-neutral-100 dark:bg-neutral-800 shimmer rounded w-3/4"></div>
                   </td>
                 </tr>
               ))
             ) : data.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-6 py-12 text-center text-neutral-400 text-xs">
+                <td colSpan={7} className="px-4 py-12 text-center text-neutral-400 text-xs">
                   No incident records found.
                 </td>
               </tr>
             ) : (
               data.map((complaint) => (
-                <tr key={complaint._id} className="hover:bg-neutral-50/40 dark:hover:bg-neutral-900/40 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center space-x-3">
+                <tr key={complaint._id} className="hover:bg-neutral-50/60 dark:hover:bg-neutral-800/30 transition-colors">
+                  <td className="px-4 py-3.5 align-middle">
+                    <div className="flex items-center gap-3">
                       <img
                         src={complaint.image}
                         alt={complaint.title}
-                        className="w-10 h-10 rounded-lg object-cover border border-neutral-200/50 dark:border-neutral-800 shrink-0"
+                        className="w-9 h-9 rounded-lg object-cover border border-neutral-200/80 dark:border-neutral-800 shrink-0 shadow-2xs"
+                        onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&q=80&w=200'; }}
                       />
-                      <div className="overflow-hidden">
-                        <Link to={`/complaint/${complaint._id}`} className="font-bold text-neutral-800 dark:text-neutral-200 hover:text-brand-600 transition-colors text-xs truncate block">
+                      <div className="min-w-0">
+                        <Link
+                          to={`/complaint/${complaint._id}`}
+                          className="font-bold text-neutral-900 dark:text-neutral-100 hover:text-brand-500 dark:hover:text-brand-400 transition-colors text-xs truncate max-w-[130px] block"
+                        >
                           {complaint.title}
                         </Link>
-                        <span className="text-[10px] text-neutral-400 capitalize mt-0.5 block">{complaint.category}</span>
+                        <span className="text-[10px] font-medium text-neutral-400 dark:text-neutral-500 capitalize block truncate">
+                          {complaint.category}
+                        </span>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="text-xs font-bold text-neutral-700 dark:text-neutral-300">{complaint.userId?.name || 'Citizen'}</div>
-                    <div className="text-[10px] text-neutral-400 truncate max-w-[120px]">{complaint.userId?.email}</div>
+                  <td className="px-4 py-3.5 align-middle">
+                    <div className="text-xs font-bold text-neutral-800 dark:text-neutral-200 truncate max-w-[120px]">
+                      {complaint.userId?.name || 'Citizen'}
+                    </div>
+                    <div className="text-[10px] text-neutral-400 dark:text-neutral-500 truncate max-w-[120px] mt-0.5">
+                      {complaint.userId?.email || '—'}
+                    </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-3.5 align-middle">
                     <StatusBadge status={complaint.status} size="sm" />
-                    <span className="text-[9px] text-neutral-400 font-bold uppercase tracking-wider block mt-1">
-                      {getAssigneeInfo(complaint) || 'Unassigned'}
-                    </span>
+                    <div className="flex items-center gap-1 text-[10px] text-neutral-500 dark:text-neutral-400 font-medium mt-1 truncate max-w-[130px]">
+                      <Users size={11} className="text-neutral-400 shrink-0" />
+                      <span className="truncate">{getAssigneeInfo(complaint) || 'Unassigned'}</span>
+                    </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-3.5 align-middle">
                     {complaint.proofImage ? (
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center gap-2">
                         <img
                           src={complaint.proofImage}
                           alt="Cleanup Proof"
-                          className="w-8 h-8 rounded object-cover cursor-pointer hover:scale-105 transition-transform"
+                          className="w-7 h-7 rounded-md object-cover cursor-pointer hover:ring-2 hover:ring-brand-500/50 transition-all border border-neutral-200/80 dark:border-neutral-800 shrink-0 shadow-2xs"
                           onClick={() => window.open(complaint.proofImage)}
                         />
-                        <span className="text-[9px] text-emerald-600 font-bold uppercase tracking-widest">Proofed</span>
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md">
+                          <CheckCircle size={10} /> Proof
+                        </span>
                       </div>
                     ) : (
-                      <span className="text-neutral-400 text-[10px] italic">No proof uploaded</span>
+                      <span className="text-[11px] text-neutral-400 dark:text-neutral-500">None</span>
                     )}
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-3.5 align-middle">
                     {complaint.feedbackRating ? (
-                      <div>
-                        <div className="flex text-yellow-400 gap-0.5 mb-0.5">
+                      <div className="space-y-0.5">
+                        <div className="flex text-amber-400 gap-0.5">
                           {[...Array(5)].map((_, i) => (
                             <Star key={i} size={10} fill={i < complaint.feedbackRating ? "currentColor" : "none"} />
                           ))}
                         </div>
-                        <p className="text-[10px] text-neutral-400 italic truncate max-w-[100px]">"{complaint.feedbackComment}"</p>
+                        {complaint.feedbackComment && (
+                          <p className="text-[10px] text-neutral-400 dark:text-neutral-500 truncate max-w-[100px]" title={complaint.feedbackComment}>
+                            "{complaint.feedbackComment}"
+                          </p>
+                        )}
                       </div>
                     ) : (
-                      <span className="text-neutral-400 text-[10px] italic">Pending closure</span>
+                      <span className="text-[11px] text-neutral-400 dark:text-neutral-500">Pending</span>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-[10px] text-neutral-500 whitespace-nowrap">
+                  <td className="px-4 py-3.5 align-middle text-[11px] text-neutral-500 dark:text-neutral-400 whitespace-nowrap">
                     {formatDate(complaint.createdAt)}
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-1.5">
+                  <td className="px-4 py-3.5 text-right align-middle whitespace-nowrap">
+                    <div className="flex justify-end gap-1.5 items-center">
                       {(complaint.status === 'pending' || complaint.status === 'rejected') && (
                         <Button
                           size="xs"
                           variant="primary"
                           onClick={() => { setSelectedComplaint(complaint); setShowAssignModal(true); }}
-                          className="text-[10px] px-2.5 py-1.5 rounded-lg bg-brand-500 text-white font-bold"
+                          className="text-xs px-3 py-1 font-semibold rounded-lg bg-brand-500 hover:bg-brand-600 text-white shadow-xs"
                         >
-                          Assign Crew
+                          Assign
                         </Button>
                       )}
 
@@ -319,8 +336,8 @@ const AdminDashboard = ({ activeTab = 'dashboard' }) => {
                             size="xs"
                             variant="primary"
                             onClick={() => handleVerify(complaint._id)}
-                            className="text-[10px] px-2.5 py-1.5 rounded-lg bg-emerald-500 text-white font-bold flex items-center gap-1"
-                            icon={<UserCheck size={11} />}
+                            className="text-xs px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-xs flex items-center gap-1"
+                            icon={<UserCheck size={12} />}
                           >
                             Verify
                           </Button>
@@ -328,8 +345,8 @@ const AdminDashboard = ({ activeTab = 'dashboard' }) => {
                             size="xs"
                             variant="danger"
                             onClick={() => handleReject(complaint._id)}
-                            className="text-[10px] px-2.5 py-1.5 rounded-lg bg-red-600 text-white font-bold flex items-center gap-1"
-                            icon={<X size={11} />}
+                            className="text-xs px-2.5 py-1 rounded-lg font-semibold shadow-xs flex items-center gap-1"
+                            icon={<X size={12} />}
                           >
                             Reject
                           </Button>
@@ -337,8 +354,8 @@ const AdminDashboard = ({ activeTab = 'dashboard' }) => {
                       )}
 
                       {complaint.status === 'verified' && (
-                        <span className="text-brand-600 dark:text-brand-400 font-black text-[9px] uppercase tracking-widest flex items-center gap-1">
-                          <CheckCircle size={12} /> ARCHIVED
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-neutral-400 dark:text-neutral-500 bg-neutral-100 dark:bg-neutral-800/80 px-2 py-0.5 rounded-md uppercase tracking-wider">
+                          <CheckCircle size={11} className="text-emerald-500" /> Archived
                         </span>
                       )}
                     </div>
@@ -351,6 +368,161 @@ const AdminDashboard = ({ activeTab = 'dashboard' }) => {
       </div>
     </Card>
   );
+
+  const renderRecentDispatches = () => {
+    const recentList = filteredComplaints.slice(0, 10);
+
+    if (loading) {
+      return (
+        <div className="space-y-3 flex-1 overflow-hidden">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="p-3.5 rounded-xl border border-neutral-100 dark:border-neutral-800/80 bg-neutral-50/40 dark:bg-neutral-800/20 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 bg-neutral-200/60 dark:bg-neutral-800 shimmer rounded-xl shrink-0"></div>
+                <div className="space-y-2">
+                  <div className="h-3.5 bg-neutral-200/60 dark:bg-neutral-800 shimmer rounded w-32"></div>
+                  <div className="h-2.5 bg-neutral-200/60 dark:bg-neutral-800 shimmer rounded w-44"></div>
+                </div>
+              </div>
+              <div className="w-16 h-7 bg-neutral-200/60 dark:bg-neutral-800 shimmer rounded-lg"></div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    if (recentList.length === 0) {
+      return (
+        <div className="flex-1 flex flex-col items-center justify-center py-12 text-center text-neutral-400 text-xs">
+          <AlertTriangle size={24} className="opacity-40 mb-2" />
+          No recent incident dispatches logged.
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex-1 overflow-y-auto pr-1.5 space-y-2.5 min-h-0">
+        {recentList.map((complaint) => (
+          <div
+            key={complaint._id}
+            className="p-3 rounded-xl border border-neutral-200/70 dark:border-neutral-800/80 bg-neutral-50/50 dark:bg-neutral-900/40 hover:border-neutral-300 dark:hover:border-neutral-700 hover:bg-neutral-100/50 dark:hover:bg-neutral-800/30 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+          >
+            {/* Left: Thumbnail & Details */}
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="relative shrink-0">
+                <img
+                  src={complaint.image}
+                  alt={complaint.title}
+                  className="w-11 h-11 rounded-xl object-cover border border-neutral-200/80 dark:border-neutral-800 shadow-2xs"
+                  onError={(e) => {
+                    e.target.src = 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&q=80&w=200';
+                  }}
+                />
+                <span className="absolute -bottom-1 -right-1 px-1.5 py-0.2 rounded-md bg-neutral-900/90 dark:bg-neutral-800 text-[9px] font-bold text-neutral-300 capitalize border border-neutral-700/50">
+                  {complaint.category}
+                </span>
+              </div>
+
+              <div className="min-w-0 space-y-1 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Link
+                    to={`/complaint/${complaint._id}`}
+                    className="font-bold text-neutral-900 dark:text-neutral-100 hover:text-brand-500 dark:hover:text-brand-400 transition-colors text-xs truncate max-w-[180px] block"
+                  >
+                    {complaint.title}
+                  </Link>
+                  <StatusBadge status={complaint.status} size="xs" />
+                </div>
+
+                <div className="flex items-center gap-2 text-[11px] text-neutral-500 dark:text-neutral-400 flex-wrap">
+                  <span className="font-semibold text-neutral-700 dark:text-neutral-300 truncate max-w-[110px]">
+                    {complaint.userId?.name || 'Citizen'}
+                  </span>
+                  <span className="text-neutral-300 dark:text-neutral-700">•</span>
+                  <span className="text-neutral-400 whitespace-nowrap text-[10px]">
+                    {formatDate(complaint.createdAt)}
+                  </span>
+                  {complaint.assignedTo && (
+                    <>
+                      <span className="text-neutral-300 dark:text-neutral-700">•</span>
+                      <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400 font-semibold truncate max-w-[130px] text-[10px]">
+                        <Users size={11} className="shrink-0" />
+                        {getAssigneeInfo(complaint)}
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Proof/Review & Action Buttons */}
+            <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-center">
+              {complaint.proofImage && (
+                <div
+                  className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 cursor-pointer hover:bg-emerald-500/20 transition-colors"
+                  onClick={() => window.open(complaint.proofImage)}
+                  title="View cleanup proof"
+                >
+                  <img src={complaint.proofImage} alt="Proof" className="w-5 h-5 rounded object-cover" />
+                  <span className="text-[10px] font-bold">Proof</span>
+                </div>
+              )}
+
+              {complaint.feedbackRating && (
+                <div className="flex text-amber-400 gap-0.5" title={complaint.feedbackComment}>
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} size={11} fill={i < complaint.feedbackRating ? "currentColor" : "none"} />
+                  ))}
+                </div>
+              )}
+
+              <div className="flex items-center gap-1.5 whitespace-nowrap">
+                {(complaint.status === 'pending' || complaint.status === 'rejected') && (
+                  <Button
+                    size="xs"
+                    variant="primary"
+                    onClick={() => { setSelectedComplaint(complaint); setShowAssignModal(true); }}
+                    className="text-xs px-3 py-1 font-semibold rounded-lg bg-brand-500 hover:bg-brand-600 text-white shadow-xs"
+                  >
+                    Assign
+                  </Button>
+                )}
+
+                {complaint.status === 'completed' && (
+                  <>
+                    <Button
+                      size="xs"
+                      variant="primary"
+                      onClick={() => handleVerify(complaint._id)}
+                      className="text-xs px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-xs flex items-center gap-1"
+                      icon={<UserCheck size={12} />}
+                    >
+                      Verify
+                    </Button>
+                    <Button
+                      size="xs"
+                      variant="danger"
+                      onClick={() => handleReject(complaint._id)}
+                      className="text-xs px-2.5 py-1 rounded-lg font-semibold shadow-xs flex items-center gap-1"
+                      icon={<X size={12} />}
+                    >
+                      Reject
+                    </Button>
+                  </>
+                )}
+
+                {complaint.status === 'verified' && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-neutral-400 dark:text-neutral-500 bg-neutral-100 dark:bg-neutral-800/80 px-2 py-0.5 rounded-md uppercase tracking-wider">
+                    <CheckCircle size={11} className="text-emerald-500" /> Archived
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   const renderDashboardContent = () => (
     <div className="space-y-6">
@@ -398,28 +570,50 @@ const AdminDashboard = ({ activeTab = 'dashboard' }) => {
       </Card>
 
       {/* Tables Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-3">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+        <div className="lg:col-span-2 flex flex-col space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-black text-neutral-800 dark:text-neutral-200 uppercase tracking-widest">
-              Recent Dispatches
-            </h3>
-            <button
-              onClick={() => toggleWidget('complaints')}
-              className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 p-1 hover:bg-neutral-100/70 dark:hover:bg-neutral-800/70 rounded-lg transition-colors duration-150 cursor-pointer"
-              aria-label="Toggle complaints widget"
-            >
-              {widgets.complaints ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-            </button>
+            <div className="flex items-center gap-2">
+              <h3 className="text-xs font-black text-neutral-800 dark:text-neutral-200 uppercase tracking-widest flex items-center gap-1.5">
+                <Truck size={14} className="text-brand-500" /> Recent Dispatches
+              </h3>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/20">
+                Live
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <Link 
+                to="/admin/complaints" 
+                className="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 flex items-center gap-1 transition-colors"
+              >
+                View all <ArrowUpRight size={13} />
+              </Link>
+              <button
+                onClick={() => toggleWidget('complaints')}
+                className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 p-1 hover:bg-neutral-100/70 dark:hover:bg-neutral-800/70 rounded-lg transition-colors duration-150 cursor-pointer"
+                aria-label="Toggle complaints widget"
+              >
+                {widgets.complaints ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </button>
+            </div>
           </div>
-          {widgets.complaints && renderComplaintsTable(filteredComplaints.slice(0, 4))}
+          {widgets.complaints && (
+            <Card className="border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900 rounded-2xl p-4 shadow-xs flex flex-col h-[520px]">
+              {renderRecentDispatches()}
+            </Card>
+          )}
         </div>
 
-        <div className="lg:col-span-1 space-y-3">
+        <div className="lg:col-span-1 flex flex-col space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-black text-neutral-800 dark:text-neutral-200 uppercase tracking-widest">
-              Live Activity Logs
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-xs font-black text-neutral-800 dark:text-neutral-200 uppercase tracking-widest flex items-center gap-1.5">
+                <Activity size={14} className="text-emerald-500" /> Live Activity Logs
+              </h3>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                Real-time
+              </span>
+            </div>
             <button
               onClick={() => toggleWidget('activity')}
               className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 p-1 hover:bg-neutral-100/70 dark:hover:bg-neutral-800/70 rounded-lg transition-colors duration-150 cursor-pointer"
@@ -429,8 +623,10 @@ const AdminDashboard = ({ activeTab = 'dashboard' }) => {
             </button>
           </div>
           {widgets.activity && (
-            <Card className="border border-neutral-200/50 dark:border-neutral-800/80 bg-white dark:bg-neutral-900 rounded-2xl p-5 shadow-sm">
-              <RecentActivityTimeline />
+            <Card className="border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900 rounded-2xl p-5 shadow-xs flex flex-col h-[520px]">
+              <div className="flex-1 overflow-y-auto pr-1 min-h-0">
+                <RecentActivityTimeline />
+              </div>
             </Card>
           )}
         </div>
@@ -496,12 +692,12 @@ const AdminDashboard = ({ activeTab = 'dashboard' }) => {
                   <tr key={u._id} className="hover:bg-neutral-50/40 dark:hover:bg-neutral-900/40 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-brand-50 dark:bg-brand-950 flex items-center justify-center font-bold text-brand-700 text-xs shrink-0 border border-brand-200/40">
+                        <div className="w-8 h-8 rounded-full bg-brand-50 dark:bg-brand-950 flex items-center justify-center font-bold text-brand-700 dark:text-brand-400 text-xs shrink-0 border border-brand-200/40">
                           {u.name?.charAt(0) || 'U'}
                         </div>
                         <div>
                           <div className="font-bold text-neutral-800 dark:text-neutral-200">{u.name}</div>
-                          <div className="text-[10px] text-neutral-400 mt-0.5">{u.email}</div>
+                          <div className="text-[10px] text-neutral-500 dark:text-neutral-400 mt-0.5">{u.email}</div>
                         </div>
                       </div>
                     </td>
@@ -552,7 +748,7 @@ const AdminDashboard = ({ activeTab = 'dashboard' }) => {
           </Card>
 
           <Card className="p-5 border border-neutral-200/50 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-sm flex items-center gap-4" delay={0.05}>
-            <div className="w-10 h-10 bg-blue-50 dark:bg-blue-950/20 rounded-xl flex items-center justify-center text-blue-600">
+            <div className="w-10 h-10 bg-blue-50 dark:bg-blue-950/20 rounded-xl flex items-center justify-center text-blue-600 dark:text-blue-400">
               <Heart size={20} />
             </div>
             <div>
@@ -562,7 +758,7 @@ const AdminDashboard = ({ activeTab = 'dashboard' }) => {
           </Card>
 
           <Card className="p-5 border border-neutral-200/50 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-sm flex items-center gap-4" delay={0.1}>
-            <div className="w-10 h-10 bg-purple-50 dark:bg-purple-950/20 rounded-xl flex items-center justify-center text-purple-600">
+            <div className="w-10 h-10 bg-purple-50 dark:bg-purple-950/20 rounded-xl flex items-center justify-center text-purple-600 dark:text-purple-400">
               <TrendingUp size={20} />
             </div>
             <div>
@@ -585,7 +781,7 @@ const AdminDashboard = ({ activeTab = 'dashboard' }) => {
                   <th className="px-6 py-4 text-[10px] font-black text-neutral-400 uppercase tracking-widest">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-100 dark:divide-neutral-850/50 text-xs">
+              <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800 text-xs">
                 {loading ? (
                   <tr><td colSpan={4} className="px-6 py-5 text-center text-neutral-400">Loading ledger transaction records...</td></tr>
                 ) : adminDonations.length === 0 ? (
@@ -595,12 +791,12 @@ const AdminDashboard = ({ activeTab = 'dashboard' }) => {
                     <tr key={d._id} className="hover:bg-neutral-50/40 dark:hover:bg-neutral-900/40 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-emerald-700 text-xs font-bold shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-emerald-700 dark:text-emerald-400 text-xs font-bold shrink-0">
                             {d.userId?.name?.charAt(0) || 'U'}
                           </div>
                           <div>
-                            <div className="font-bold text-neutral-850 dark:text-neutral-250">{d.userId?.name || 'Supporting Citizen'}</div>
-                            <div className="text-[10px] text-neutral-400 mt-0.5">{d.userId?.email || 'No email log'}</div>
+                            <div className="font-bold text-neutral-900 dark:text-neutral-100">{d.userId?.name || 'Supporting Citizen'}</div>
+                            <div className="text-[10px] text-neutral-500 dark:text-neutral-400 mt-0.5">{d.userId?.email || 'No email log'}</div>
                           </div>
                         </div>
                       </td>
@@ -611,7 +807,7 @@ const AdminDashboard = ({ activeTab = 'dashboard' }) => {
                       </td>
                       <td className="px-6 py-4 text-[10px] text-neutral-400">
                         <div className="flex flex-col">
-                          <span className="font-bold text-neutral-750 dark:text-neutral-300">{new Date(d.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                          <span className="font-bold text-neutral-800 dark:text-neutral-200">{new Date(d.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
                           <span className="text-[9px] opacity-70 mt-0.5">{new Date(d.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
                       </td>
@@ -684,7 +880,7 @@ const AdminDashboard = ({ activeTab = 'dashboard' }) => {
                 setAssignType(e.target.value);
                 setAssignTo('');
               }}
-              className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-850 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
+              className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
             >
               <option value="employee">Municipal Employee</option>
               <option value="ngo">NGO Volunteer Partner</option>
@@ -699,7 +895,7 @@ const AdminDashboard = ({ activeTab = 'dashboard' }) => {
               id="assignTo"
               value={assignTo}
               onChange={(e) => setAssignTo(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-850 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
+              className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
             >
               <option value="">Select dispatch target</option>
               {(assignType === 'employee' ? employees : ngos).map((person) => (
@@ -711,7 +907,7 @@ const AdminDashboard = ({ activeTab = 'dashboard' }) => {
           </div>
         </div>
 
-        <div className="flex space-x-4 pt-4 border-t border-neutral-100 dark:border-neutral-850 mt-5">
+        <div className="flex space-x-4 pt-4 border-t border-neutral-100 dark:border-neutral-800 mt-5">
           <Button
             type="button"
             variant="secondary"

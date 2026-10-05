@@ -20,7 +20,7 @@ const register = async (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { name, email, password, role, phone } = req.body;
+    const { name, email, password, phone } = req.body;
 
     // Check if user exists
     const userExists = await User.findOne({ email });
@@ -33,7 +33,7 @@ const register = async (req, res) => {
       name,
       email,
       password,
-      role,
+      role: 'citizen',
       phone
     });
 
@@ -143,4 +143,58 @@ const getMe = async (req, res) => {
   });
 };
 
-export { register, login, getMe };
+// @desc    Update user profile
+// @route   PUT /api/auth/profile
+// @access  Private
+const updateProfile = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ 
+        errors: errors.array(), 
+        message: errors.array()[0].msg 
+      });
+    }
+
+    const { name, phone } = req.body;
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Only allow updating permitted profile fields
+    if (name !== undefined) user.name = name.trim();
+    if (phone !== undefined) user.phone = phone.trim();
+
+    await user.save();
+
+    // Audit Log: UPDATE User Profile
+    recordAuditLog({
+      req,
+      user: { _id: user._id, name: user.name, email: user.email, role: user.role },
+      action: 'UPDATE',
+      resource: 'User',
+      resourceId: user._id,
+      target: { name: user.name, email: user.email, identifier: user._id.toString() },
+      description: `User "${user.name}" updated their profile`,
+      details: {
+        name: user.name,
+        phone: user.phone
+      }
+    });
+
+    res.json({
+      success: true,
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      phone: user.phone
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export { register, login, getMe, updateProfile };

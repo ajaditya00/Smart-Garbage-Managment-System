@@ -4,26 +4,64 @@
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f4f4f5;
-  border-radius: 10px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #10b981;
-  border-radius: 10px;
+  background: #d4d4d8;
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #059669;
+  background: #a1a1aa;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #3f3f46;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #52525b;
 }
 
 /* Smooth scrolling */
 html {
   scroll-behavior: smooth;
+}
+
+@layer base {
+  body {
+    @apply text-neutral-900 bg-neutral-50 dark:text-neutral-100 dark:bg-neutral-950 antialiased;
+  }
+}
+
+@layer utilities {
+  .text-neutral-250 { color: #dcdce0; }
+  .text-neutral-350 { color: #b5b5bc; }
+  .text-neutral-450 { color: #85858d; }
+  .text-neutral-750 { color: #2d2d32; }
+  .text-neutral-850 { color: #1f1f23; }
+
+  .dark .dark\:text-neutral-250,
+  .dark\:text-neutral-250:is(.dark *) { color: #dcdce0; }
+  .dark .dark\:text-neutral-350,
+  .dark\:text-neutral-350:is(.dark *) { color: #b5b5bc; }
+  .dark .dark\:text-neutral-450,
+  .dark\:text-neutral-450:is(.dark *) { color: #85858d; }
+  .dark .dark\:text-neutral-750,
+  .dark\:text-neutral-750:is(.dark *) { color: #2d2d32; }
+  .dark .dark\:text-neutral-850,
+  .dark\:text-neutral-850:is(.dark *) { color: #1f1f23; }
+
+  .dark .dark\:border-neutral-850,
+  .dark\:border-neutral-850:is(.dark *) { border-color: #262626; }
+  .dark .dark\:bg-neutral-850,
+  .dark\:bg-neutral-850:is(.dark *) { background-color: #1f1f23; }
 }
 
 /* Leaflet map styling */

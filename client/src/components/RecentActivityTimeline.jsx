@@ -35,7 +35,7 @@ const RecentActivityTimeline = () => {
       // Map complaints to timeline activities
       const complaintEvents = complaints.flatMap(c => {
         const events = [];
-        
+
         // 1. Created Event
         events.push({
           id: `${c._id}-created`,
@@ -152,31 +152,35 @@ const RecentActivityTimeline = () => {
   }
 
   return (
-    <div className="relative pl-4 border-l border-neutral-100 dark:border-neutral-800 space-y-6">
+    <div className="relative py-1 pl-1 pr-1">
       {activities.map((act, index) => {
         const Icon = act.icon;
+        const isLast = index === activities.length - 1;
         return (
           <motion.div
             key={act.id}
             initial={{ opacity: 0, x: -8 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.25, delay: index * 0.05 }}
-            className="relative"
+            className="flex items-stretch gap-3"
           >
-            {/* Timeline node node */}
-            <span className="absolute -left-[29px] top-1 flex items-center justify-center">
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center border text-xs ${act.iconColor}`}>
+            {/* Timeline node & connector column */}
+            <div className="flex flex-col items-center shrink-0">
+              <div className={`w-7 h-7 rounded-full flex items-center justify-center border text-xs shrink-0 ${act.iconColor}`}>
                 <Icon size={12} />
               </div>
-            </span>
+              {!isLast && (
+                <div className="w-px flex-1 bg-neutral-200 dark:bg-neutral-800 my-1" />
+              )}
+            </div>
 
             {/* Event Description */}
-            <div className="ml-2">
-              <div className="flex items-center justify-between">
+            <div className={`flex-1 min-w-0 ${isLast ? 'pb-1' : 'pb-5'}`}>
+              <div className="flex items-center justify-between gap-2">
                 <span className="text-xs font-bold text-neutral-800 dark:text-neutral-200">
                   {act.title}
                 </span>
-                <span className="text-[10px] text-neutral-400 font-medium">
+                <span className="text-[10px] text-neutral-400 font-medium shrink-0">
                   {formatActivityTime(act.timestamp)}
                 </span>
               </div>

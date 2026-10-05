@@ -95,11 +95,27 @@ export const AuthProvider = ({ children }) => {
     toast.success('Logged out successfully');
   };
 
+  const fetchUser = async () => {
+    const currentToken = token || localStorage.getItem('token');
+    if (currentToken) {
+      try {
+        const response = await axiosInstance.get('/auth/me', {
+          headers: { Authorization: `Bearer ${currentToken}` }
+        });
+        setUser(response.data);
+        return response.data;
+      } catch (error) {
+        console.error('Failed to fetch user:', error);
+      }
+    }
+  };
+
   const value = {
     user,
     login,
     register,
     logout,
+    fetchUser,
     loading,
     isAuthenticated: !!user,
     isAdmin: user?.role === 'admin',

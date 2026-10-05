@@ -4,3 +4,5 @@ dist/
 uploads/*
 !uploads/.gitkeep
 .DS_Store
+Readme.md
+production_readliness_audit.md

@@ -38,6 +38,8 @@ const AppShell = ({ children }) => {
     const saved = localStorage.getItem('swachhai_sidebar_collapsed');
     return saved ? JSON.parse(saved) : false;
   });
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
+  const isExpanded = !isSidebarCollapsed || isSidebarHovered;
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
@@ -55,6 +57,7 @@ const AppShell = ({ children }) => {
       localStorage.setItem('swachhai_sidebar_collapsed', JSON.stringify(next));
       return next;
     });
+    setIsSidebarHovered(false);
   };
 
   // Keyboard shortcut listener for Ctrl+K / Cmd+K
@@ -153,9 +156,19 @@ const AppShell = ({ children }) => {
       
       {/* ===== FLOATING rounded SIDEBAR ===== */}
       <motion.aside
-        animate={{ width: isSidebarCollapsed ? '76px' : '260px' }}
-        transition={{ duration: 0.3, ease: 'easeInOut' }}
-        className="fixed top-4 bottom-4 left-4 z-40 bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800/50 rounded-2xl shadow-xl shadow-neutral-100/50 dark:shadow-none flex flex-col justify-between overflow-hidden print:hidden"
+        onMouseEnter={() => {
+          if (isSidebarCollapsed) setIsSidebarHovered(true);
+        }}
+        onMouseLeave={() => {
+          if (isSidebarCollapsed) setIsSidebarHovered(false);
+        }}
+        animate={{ width: isExpanded ? '260px' : '76px' }}
+        transition={{ duration: 0.25, ease: 'easeInOut' }}
+        className={`fixed top-4 bottom-4 left-4 z-40 bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800/50 rounded-2xl flex flex-col justify-between overflow-hidden print:hidden transition-shadow duration-200 ${
+          isSidebarCollapsed && isSidebarHovered 
+            ? 'shadow-2xl shadow-neutral-900/20 dark:shadow-black/70 ring-1 ring-black/5 dark:ring-white/10' 
+            : 'shadow-xl shadow-neutral-100/50 dark:shadow-none'
+        }`}
       >
         {/* Workspace Brand Logo */}
         <div>
@@ -164,16 +177,20 @@ const AppShell = ({ children }) => {
               <div className="w-10 h-10 shrink-0 bg-brand-500 rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/20">
                 <Trash2 size={20} className="text-white" />
               </div>
-              {!isSidebarCollapsed && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.1 }}
-                >
-                  <p className="text-neutral-900 dark:text-neutral-50 font-black text-sm leading-tight tracking-tight">Swachh AI</p>
-                  <p className="text-[10px] text-brand-600 font-bold tracking-widest uppercase mt-0.5">SaaS Node</p>
-                </motion.div>
-              )}
+              <AnimatePresence>
+                {isExpanded && (
+                  <motion.div
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -8 }}
+                    transition={{ duration: 0.15 }}
+                    className="whitespace-nowrap"
+                  >
+                    <p className="text-neutral-900 dark:text-neutral-50 font-black text-sm leading-tight tracking-tight">Swachh AI</p>
+                    <p className="text-[10px] text-brand-600 font-bold tracking-widest uppercase mt-0.5">SaaS Node</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </Link>
           </div>
 
@@ -186,6 +203,10 @@ const AppShell = ({ children }) => {
                 <Link
                   key={item.path}
                   to={item.path}
+                  title={!isExpanded ? item.label : undefined}
+                  onClick={() => {
+                    if (isSidebarCollapsed) setIsSidebarHovered(false);
+                  }}
                   className={`flex items-center px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-colors duration-150 relative group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30 ${
                     isActive 
                       ? 'text-brand-700 dark:text-brand-400 bg-brand-50/90 dark:bg-brand-950/40 dark:border dark:border-brand-800/30 font-bold shadow-xs' 
@@ -200,15 +221,19 @@ const AppShell = ({ children }) => {
                         : 'text-neutral-400 dark:text-neutral-400 group-hover:text-neutral-700 dark:group-hover:text-neutral-200'
                     }`} 
                   />
-                  {!isSidebarCollapsed && (
-                    <motion.span 
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="ml-3 truncate leading-none"
-                    >
-                      {item.label}
-                    </motion.span>
-                  )}
+                  <AnimatePresence>
+                    {isExpanded && (
+                      <motion.span 
+                        initial={{ opacity: 0, x: -6 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -6 }}
+                        transition={{ duration: 0.15 }}
+                        className="ml-3 truncate leading-none whitespace-nowrap font-medium"
+                      >
+                        {item.label}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
                   {isActive && (
                     <motion.div 
                       layoutId="activeIndicator"
@@ -228,7 +253,8 @@ const AppShell = ({ children }) => {
             <button
               onClick={toggleSidebar}
               className="p-2 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 rounded-lg hover:bg-neutral-100/70 dark:hover:bg-neutral-800/70 transition-colors duration-150 cursor-pointer"
-              aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              aria-label={isSidebarCollapsed ? "Expand sidebar permanently" : "Collapse sidebar"}
+              title={isSidebarCollapsed ? "Pin sidebar open" : "Collapse sidebar"}
             >
               {isSidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
             </button>
@@ -242,22 +268,27 @@ const AppShell = ({ children }) => {
                   <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-950/80 flex items-center justify-center font-bold text-brand-700 dark:text-brand-400 text-xs shrink-0 border border-brand-200/50 dark:border-brand-800/40">
                     {user.name?.charAt(0) || 'U'}
                   </div>
-                  {!isSidebarCollapsed && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="text-left overflow-hidden"
-                    >
-                      <p className="text-xs font-bold text-neutral-800 dark:text-neutral-200 truncate">{user.name}</p>
-                      <p className="text-[10px] text-neutral-400 dark:text-neutral-500 uppercase tracking-widest leading-none mt-0.5 truncate">{user.role}</p>
-                    </motion.div>
-                  )}
+                  <AnimatePresence>
+                    {isExpanded && (
+                      <motion.div
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -8 }}
+                        transition={{ duration: 0.15 }}
+                        className="text-left overflow-hidden whitespace-nowrap"
+                      >
+                        <p className="text-xs font-bold text-neutral-800 dark:text-neutral-200 truncate">{user.name}</p>
+                        <p className="text-[10px] text-neutral-400 dark:text-neutral-500 uppercase tracking-widest leading-none mt-0.5 truncate">{user.role}</p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
-                {!isSidebarCollapsed && (
+                {isExpanded && (
                   <button 
                     onClick={handleLogout}
                     className="p-1.5 text-neutral-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors duration-150 cursor-pointer"
                     aria-label="Logout"
+                    title="Logout"
                   >
                     <LogOut size={14} />
                   </button>
@@ -309,7 +340,7 @@ const AppShell = ({ children }) => {
             >
               <Search size={13} />
               <span>Search platform...</span>
-              <kbd className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-750 px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase text-neutral-500 dark:text-neutral-400">
+              <kbd className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase text-neutral-500 dark:text-neutral-400">
                 ⌘K
               </kbd>
             </button>

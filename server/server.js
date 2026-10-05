@@ -22,38 +22,74 @@ import feedbackRoutes from './routes/feedback.js';
 import donationRoutes from './routes/donations.js';
 import uploadRoutes from './routes/uploads.js';
 import publicRoutes from './routes/public.js';
+import { validateCloudinaryConfig } from './middleware/upload.js';
 // import aiRoutes from './routes/ai.js';
 
 
 // Connect to database
 connectDB();
 
+// Validate Cloudinary environment configuration
+validateCloudinaryConfig();
+
 const app = express();
+
+// Trust reverse proxy (single hop for platforms like Render) safely without blindly trusting arbitrary headers
+app.set('trust proxy', 1);
 
 // Body parser middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// CORS middleware allowing Vercel production, preview deployments, and local development
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:3000',
+// Parse configured client URLs from environment (supports comma-separated list and trims trailing slashes)
+const configuredOrigins = process.env.CLIENT_URL
+  ? process.env.CLIENT_URL.split(',').map(url => url.trim().replace(/\/+$/, '')).filter(Boolean)
+  : [];
+
+// Trusted production frontend origins
+const productionOrigins = [
   'https://smart-garbage-managment-system.vercel.app',
   'https://smart-garbage-drab.vercel.app',
-  process.env.CLIENT_URL
-].filter(Boolean);
+  ...configuredOrigins
+].map(url => url.replace(/\/+$/, '')).filter(Boolean);
+
+// Local development origins
+const developmentOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:3000',
+  ...productionOrigins
+];
+
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? Array.from(new Set(productionOrigins))
+  : Array.from(new Set(developmentOrigins));
 
 app.use(cors({
   origin: function (origin, callback) {
+    // Allow non-browser requests (e.g. mobile apps, curl, server-to-server) where origin is undefined
     if (!origin) return callback(null, true);
-    if (
-      allowedOrigins.includes(origin) ||
-      origin.endsWith('.vercel.app') ||
-      process.env.NODE_ENV !== 'production'
-    ) {
+
+    const normalizedOrigin = origin.replace(/\/+$/, '');
+
+    // In development mode, allow localhost, 127.0.0.1, or configured origins
+    if (process.env.NODE_ENV !== 'production') {
+      if (
+        allowedOrigins.includes(normalizedOrigin) ||
+        /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(normalizedOrigin)
+      ) {
+        return callback(null, true);
+      }
+      return callback(null, true); // Preserve local development flexibility
+    }
+
+    // In production, strictly restrict to configured, trusted frontend origins
+    if (allowedOrigins.includes(normalizedOrigin)) {
       return callback(null, true);
     }
-    return callback(new Error(`CORS policy does not allow access from ${origin}`));
+
+    return callback(new Error(`CORS policy does not allow access from origin: ${origin}`));
   },
   credentials: true
 }));

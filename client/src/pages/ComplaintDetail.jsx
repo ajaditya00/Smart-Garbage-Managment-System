@@ -290,7 +290,7 @@ const ComplaintDetail = () => {
               <p className="text-xs text-neutral-500 mb-5">Your review closes the loop and archives this municipal record.</p>
               
               <form onSubmit={handleFeedbackSubmit} className="space-y-5">
-                <div className="flex flex-col items-center p-5 bg-neutral-50 dark:bg-neutral-950 border border-dashed border-neutral-250 dark:border-neutral-800 rounded-2xl">
+                <div className="flex flex-col items-center p-5 bg-neutral-50 dark:bg-neutral-950 border border-dashed border-neutral-200 dark:border-neutral-800 rounded-2xl">
                   <label className="text-xs font-black text-neutral-500 uppercase tracking-widest mb-3.5">
                     Service Satisfaction
                   </label>
@@ -309,7 +309,7 @@ const ComplaintDetail = () => {
                     rows={3}
                     value={feedback.comment}
                     onChange={(e) => setFeedback(prev => ({ ...prev, comment: e.target.value }))}
-                    className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-850 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
+                    className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
                     placeholder="Details about quality of cleanup..."
                   />
                 </div>
@@ -333,7 +333,7 @@ const ComplaintDetail = () => {
           
           {/* Metadata Cards */}
           <Card className="border border-neutral-200/50 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 rounded-2xl shadow-sm">
-            <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-4 pb-2 border-b border-neutral-100 dark:border-neutral-850">
+            <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-4 pb-2 border-b border-neutral-100 dark:border-neutral-800">
               Audit details
             </h3>
             <div className="space-y-3.5 text-xs">
@@ -343,7 +343,7 @@ const ComplaintDetail = () => {
               </div>
               <div>
                 <p className="text-[10px] text-neutral-400 uppercase tracking-wider font-bold">Incidents Index ID</p>
-                <p className="font-mono text-neutral-850 dark:text-neutral-300 select-all mt-0.5">{complaint._id}</p>
+                <p className="font-mono text-neutral-800 dark:text-neutral-200 select-all mt-0.5">{complaint._id}</p>
               </div>
               <div>
                 <p className="text-[10px] text-neutral-400 uppercase tracking-wider font-bold">Timeline Status</p>
@@ -357,11 +357,11 @@ const ComplaintDetail = () => {
           {/* Assigned Crew Section */}
           {assigneeInfo && (
             <Card className="border border-neutral-200/50 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 rounded-2xl shadow-sm">
-              <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-4 pb-2 border-b border-neutral-100 dark:border-neutral-850">
+              <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-4 pb-2 border-b border-neutral-100 dark:border-neutral-800">
                 Assigned operator
               </h3>
               <div className="space-y-2 text-xs">
-                <p className="font-bold text-neutral-850 dark:text-neutral-200">{assigneeInfo.name}</p>
+                <p className="font-bold text-neutral-800 dark:text-neutral-200">{assigneeInfo.name}</p>
                 <p className="text-neutral-500 capitalize">
                   Role: {assigneeInfo.type} • {assigneeInfo.email}
                 </p>
@@ -377,7 +377,7 @@ const ComplaintDetail = () => {
           {/* Verified Feedback review if available */}
           {existingFeedback && (
             <Card className="border border-neutral-200/50 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 rounded-2xl shadow-sm">
-              <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-4 pb-2 border-b border-neutral-100 dark:border-neutral-850 flex items-center gap-1.5">
+              <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-4 pb-2 border-b border-neutral-100 dark:border-neutral-800 flex items-center gap-1.5">
                 <Star size={14} className="text-yellow-400 fill-yellow-400" /> Verified Citizen review
               </h3>
               <div className="bg-emerald-50 dark:bg-emerald-950/10 rounded-2xl p-4.5 border border-emerald-100 dark:border-emerald-900/30 text-xs space-y-3.5">
@@ -403,11 +403,11 @@ const ComplaintDetail = () => {
 
           {/* Reporter details */}
           <Card className="border border-neutral-200/50 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 rounded-2xl shadow-sm">
-            <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-4 pb-2 border-b border-neutral-100 dark:border-neutral-850">
+            <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-4 pb-2 border-b border-neutral-100 dark:border-neutral-800">
               Reporter profile
             </h3>
             <div className="space-y-2 text-xs">
-              <p className="font-bold text-neutral-850 dark:text-neutral-250">{complaint.userId?.name}</p>
+              <p className="font-bold text-neutral-900 dark:text-neutral-100">{complaint.userId?.name}</p>
               <p className="text-neutral-500">{complaint.userId?.email}</p>
               <p className="text-[10px] text-neutral-400 font-medium">
                 Registered on {formatDate(complaint.userId?.createdAt || Date.now())}

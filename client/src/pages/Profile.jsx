@@ -117,7 +117,7 @@ const Profile = () => {
             <Card className="border border-neutral-200/50 dark:border-neutral-800 bg-white dark:bg-neutral-900 rounded-2xl shadow-sm p-6">
               <div className="flex justify-between items-start mb-6 pb-4 border-b border-neutral-100 dark:border-neutral-800">
                 <div className="flex items-center space-x-4">
-                  <div className="w-14 h-14 bg-brand-50 dark:bg-brand-950 rounded-full flex items-center justify-center font-bold text-brand-700 border border-brand-200/40 text-lg shrink-0">
+                  <div className="w-14 h-14 bg-brand-50 dark:bg-brand-950 rounded-full flex items-center justify-center font-bold text-brand-700 dark:text-brand-400 border border-brand-200/40 text-lg shrink-0">
                     {user.name?.charAt(0) || 'U'}
                   </div>
                   <div>
@@ -153,7 +153,7 @@ const Profile = () => {
                       required
                       value={formData.name}
                       onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-850 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
+                      className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
                       placeholder="Enter your full name"
                     />
                   </div>
@@ -167,7 +167,7 @@ const Profile = () => {
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                      className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-850 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
+                      className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
                       placeholder="Enter your phone number"
                     />
                   </div>
@@ -194,37 +194,37 @@ const Profile = () => {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-xs font-medium">
                   <div>
-                    <label className="block text-[10px] font-black text-neutral-450 uppercase tracking-widest mb-1">
+                    <label className="block text-[10px] font-black text-neutral-500 dark:text-neutral-400 uppercase tracking-widest mb-1">
                       Full Name
                     </label>
-                    <div className="p-3 bg-neutral-50 dark:bg-neutral-950 border border-neutral-100 dark:border-neutral-850 rounded-xl text-neutral-800 dark:text-neutral-200">
+                    <div className="p-3 bg-neutral-50 dark:bg-neutral-950 border border-neutral-100 dark:border-neutral-800 rounded-xl text-neutral-800 dark:text-neutral-200">
                       {user.name}
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-black text-neutral-450 uppercase tracking-widest mb-1">
+                    <label className="block text-[10px] font-black text-neutral-500 dark:text-neutral-400 uppercase tracking-widest mb-1">
                       Email Address
                     </label>
-                    <div className="p-3 bg-neutral-50 dark:bg-neutral-950 border border-neutral-100 dark:border-neutral-850 rounded-xl text-neutral-400 dark:text-neutral-500">
+                    <div className="p-3 bg-neutral-50 dark:bg-neutral-950 border border-neutral-100 dark:border-neutral-800 rounded-xl text-neutral-400 dark:text-neutral-300">
                       {user.email}
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-black text-neutral-450 uppercase tracking-widest mb-1">
+                    <label className="block text-[10px] font-black text-neutral-500 dark:text-neutral-400 uppercase tracking-widest mb-1">
                       Phone Number
                     </label>
-                    <div className="p-3 bg-neutral-50 dark:bg-neutral-950 border border-neutral-100 dark:border-neutral-850 rounded-xl text-neutral-800 dark:text-neutral-200">
+                    <div className="p-3 bg-neutral-50 dark:bg-neutral-950 border border-neutral-100 dark:border-neutral-800 rounded-xl text-neutral-800 dark:text-neutral-200">
                       {user.phone || 'Not provided'}
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-black text-neutral-450 uppercase tracking-widest mb-1">
+                    <label className="block text-[10px] font-black text-neutral-500 dark:text-neutral-400 uppercase tracking-widest mb-1">
                       Member Registry
                     </label>
-                    <div className="p-3 bg-neutral-50 dark:bg-neutral-950 border border-neutral-100 dark:border-neutral-850 rounded-xl text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
+                    <div className="p-3 bg-neutral-50 dark:bg-neutral-950 border border-neutral-100 dark:border-neutral-800 rounded-xl text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
                       <Calendar size={13} className="text-neutral-400" />
                       <span>Registered on {formatDate(user.createdAt)}</span>
                     </div>
@@ -241,7 +241,7 @@ const Profile = () => {
                 <div className="flex items-center justify-between p-3.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-150 dark:border-neutral-800 rounded-xl">
                   <div className="text-xs">
                     <p className="font-bold text-neutral-800 dark:text-neutral-200">System Directory Status</p>
-                    <p className="text-[10px] text-neutral-450 mt-0.5">Assigned roles parameters and credentials.</p>
+                    <p className="text-[10px] text-neutral-500 dark:text-neutral-400 mt-0.5">Assigned roles parameters and credentials.</p>
                   </div>
                   <span className="px-2.5 py-0.5 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 rounded text-[10px] font-black uppercase tracking-wider">
                     Verified
@@ -251,7 +251,7 @@ const Profile = () => {
                 <div className="flex items-center justify-between p-3.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-150 dark:border-neutral-800 rounded-xl">
                   <div className="text-xs">
                     <p className="font-bold text-neutral-800 dark:text-neutral-200">Role Privilege Level</p>
-                    <p className="text-[10px] text-neutral-450 mt-0.5">Scope of dispatch approvals.</p>
+                    <p className="text-[10px] text-neutral-500 dark:text-neutral-400 mt-0.5">Scope of dispatch approvals.</p>
                   </div>
                   <span className="px-2.5 py-0.5 bg-brand-500 text-white rounded text-[10px] font-black uppercase tracking-wider">
                     {user.role}
@@ -265,7 +265,7 @@ const Profile = () => {
         {/* Right Column - Status & Support Info */}
         <div className="space-y-6">
           <Card className="border border-neutral-200/50 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 rounded-2xl shadow-sm">
-            <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-4 pb-2 border-b border-neutral-100 dark:border-neutral-850">
+            <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-4 pb-2 border-b border-neutral-100 dark:border-neutral-800">
               Account Status
             </h3>
             <div className="space-y-3.5 text-xs font-semibold">
@@ -286,7 +286,7 @@ const Profile = () => {
 
           {user.role === 'citizen' && (
             <Card className="border border-neutral-200/50 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 rounded-2xl shadow-sm">
-              <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-4 pb-2 border-b border-neutral-100 dark:border-neutral-850">
+              <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-4 pb-2 border-b border-neutral-100 dark:border-neutral-800">
                 Workspace Shortcuts
               </h3>
               <div className="space-y-3">
@@ -301,7 +301,7 @@ const Profile = () => {
                   to="/donate"
                   className="block w-full text-left p-3.5 bg-emerald-50 hover:bg-emerald-100/30 dark:bg-emerald-950/10 dark:border dark:border-emerald-900/30 rounded-xl transition-all"
                 >
-                  <div className="font-black text-emerald-800 dark:text-emerald-450 text-xs">Contribute Capital Support</div>
+                  <div className="font-black text-emerald-800 dark:text-emerald-400 text-xs">Contribute Capital Support</div>
                   <div className="text-[10px] text-neutral-400 mt-0.5">Donate funds to Swachh drives</div>
                 </Link>
               </div>
@@ -309,7 +309,7 @@ const Profile = () => {
           )}
 
           <Card className="border border-neutral-200/50 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 rounded-2xl shadow-sm">
-            <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-4 pb-2 border-b border-neutral-100 dark:border-neutral-850">
+            <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-4 pb-2 border-b border-neutral-100 dark:border-neutral-800">
               Workspace Support
             </h3>
             <div className="text-xs text-neutral-500 leading-relaxed space-y-3">

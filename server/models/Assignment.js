@@ -32,4 +32,9 @@ const assignmentSchema = new mongoose.Schema({
   timestamps: true
 });
 
+// Database indexes for fast querying, assignment lookups, and task tracking
+assignmentSchema.index({ complaintId: 1 });
+assignmentSchema.index({ assigneeId: 1, createdAt: -1 });
+assignmentSchema.index({ complaintId: 1, assigneeId: 1 });
+
 export default mongoose.model('Assignment', assignmentSchema);

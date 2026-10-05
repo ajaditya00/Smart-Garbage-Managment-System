@@ -20,7 +20,7 @@ const Button = forwardRef(({
   to,
   ...props
 }, ref) => {
-  const baseClasses = 'inline-flex items-center justify-center font-bold rounded-xl transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 select-none';
+  const baseClasses = 'inline-flex items-center justify-center font-bold rounded-xl transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 select-none whitespace-nowrap';
 
   const variants = {
     primary: 'bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white shadow-xs focus-visible:ring-brand-500/40 dark:focus-visible:ring-offset-neutral-900',
@@ -31,15 +31,17 @@ const Button = forwardRef(({
   };
 
   const sizes = {
-    sm: 'px-3 py-1.5 text-sm',
-    md: 'px-4 py-2 text-sm',
-    lg: 'px-6 py-3 text-base',
-    xl: 'px-8 py-4 text-lg'
+    xs: 'px-2.5 py-1 text-xs rounded-lg gap-1.5',
+    sm: 'px-3 py-1.5 text-xs rounded-lg gap-1.5',
+    md: 'px-4 py-2 text-sm rounded-xl gap-2',
+    lg: 'px-6 py-3 text-base rounded-xl gap-2',
+    xl: 'px-8 py-4 text-lg rounded-2xl gap-2.5'
   };
 
   const isDisabled = disabled || loading;
   const isLink = !!to;
   const Component = isLink ? MotionLink : motion.button;
+  const sizeClass = sizes[size] || sizes.md;
 
   return (
     <Component
@@ -48,7 +50,7 @@ const Button = forwardRef(({
       type={!isLink ? type : undefined}
       onClick={onClick}
       disabled={!isLink ? isDisabled : undefined}
-      className={`${baseClasses} ${variants[variant]} ${sizes[size]} ${
+      className={`${baseClasses} ${variants[variant]} ${sizeClass} ${
         isDisabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'cursor-pointer'
       } ${className}`}
       variants={!isDisabled ? buttonVariants : {}}
@@ -61,7 +63,7 @@ const Button = forwardRef(({
         <LoadingSpinner size="sm" text="" />
       ) : (
         <>
-          {icon && <span className="mr-2">{icon}</span>}
+          {icon && <span className="shrink-0 flex items-center">{icon}</span>}
           {children}
         </>
       )}

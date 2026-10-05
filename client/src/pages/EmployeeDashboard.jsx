@@ -249,7 +249,7 @@ const EmployeeDashboard = () => {
               id="modalStatus"
               value={newStatus}
               onChange={(e) => setNewStatus(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-850 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
+              className="w-full px-3.5 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-neutral-800 dark:text-neutral-100 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
             >
               <option value="in-progress">In Progress</option>
               <option value="completed">Completed (Proof Required)</option>
@@ -272,7 +272,7 @@ const EmployeeDashboard = () => {
           )}
         </div>
 
-        <div className="flex space-x-4 pt-4 border-t border-neutral-100 dark:border-neutral-850 mt-5">
+        <div className="flex space-x-4 pt-4 border-t border-neutral-100 dark:border-neutral-800 mt-5">
           <Button
             type="button"
             variant="secondary"

@@ -32,4 +32,11 @@ const donationSchema = new mongoose.Schema({
   timestamps: true
 });
 
+// Database indexes for fast lookups, payment verification, and user history
+donationSchema.index({ razorpayOrderId: 1 }, { unique: true });
+donationSchema.index({ userId: 1, status: 1 });
+donationSchema.index({ userId: 1, createdAt: -1 });
+donationSchema.index({ status: 1 });
+donationSchema.index({ createdAt: -1 });
+
 export default mongoose.model('Donation', donationSchema);

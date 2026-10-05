@@ -37,6 +37,7 @@ export const authAPI = {
   login: (credentials) => API.post('/auth/login', credentials),
   register: (userData) => API.post('/auth/register', userData),
   getMe: () => API.get('/auth/me'),
+  updateProfile: (userData) => API.put('/auth/profile', userData),
 };
 
 // Complaint APIs

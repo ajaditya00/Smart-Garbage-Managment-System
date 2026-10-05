@@ -29,4 +29,9 @@ const feedbackSchema = new mongoose.Schema({
   timestamps: true
 });
 
+// Database indexes for fast querying and duplicate prevention
+feedbackSchema.index({ complaintId: 1, userId: 1 }, { unique: true });
+feedbackSchema.index({ userId: 1 });
+feedbackSchema.index({ createdAt: -1 });
+
 export default mongoose.model('Feedback', feedbackSchema);
